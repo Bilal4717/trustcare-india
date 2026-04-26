@@ -271,19 +271,28 @@ def create_app() -> Flask:
         except Exception as exc:
             err = str(exc)
             err_l = err.lower()
-            quota_like = (
+            recoverable_startup = (
                 "resource_exhausted" in err_l
                 or "quota" in err_l
                 or "429" in err_l
                 or "rate limit" in err_l
+                or "faiss" in err_l
+                or "could not import faiss" in err_l
+                or "faiss backend unavailable" in err_l
             )
-            if not quota_like:
+            if not recoverable_startup:
                 raise
             retriever = _build_keyword_retriever(df, k=10)
-            startup_warning = (
-                "Embedding quota/rate limit hit during startup. "
-                "Using keyword fallback retriever (reduced semantic quality)."
-            )
+            if "faiss" in err_l:
+                startup_warning = (
+                    "FAISS unavailable in serverless runtime. "
+                    "Using keyword fallback retriever (reduced semantic quality)."
+                )
+            else:
+                startup_warning = (
+                    "Embedding quota/rate limit hit during startup. "
+                    "Using keyword fallback retriever (reduced semantic quality)."
+                )
             vs_path = "keyword_fallback_retriever"
 
     runtime = AgentRuntime(llm, retriever, df, tavily_client=tavily_client)
