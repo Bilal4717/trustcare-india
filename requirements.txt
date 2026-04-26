@@ -6,6 +6,8 @@ python-dotenv>=1.0
 pandas>=2.0
 openpyxl>=3.1
 numpy>=1.26
+# Required for FAISS vector retrieval (Vercel / any host without Mosaic)
+faiss-cpu>=1.8
 
 # ── LangChain / LangGraph core ────────────────────────────────────────────────
 langchain-core>=0.3

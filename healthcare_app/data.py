@@ -7,6 +7,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
 from healthcare_app.config import (
+    BASE_DIR,
     CHUNK_BATCH_SIZE,
     DATASET_PATH,
     DATA_SOURCE,
@@ -103,12 +104,25 @@ def _ensure_required_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _resolve_data_path(path: str) -> str:
+    """
+    Windows/macOS absolute paths are preserved. Relative paths and bare filenames
+    are resolved against the app root (BASE_DIR) so cloud deploys work without C:\\… locals.
+    """
+    p = (path or "").strip()
+    if not p:
+        return p
+    if os.path.isabs(p):
+        return p
+    return os.path.join(BASE_DIR, p)
+
+
 def load_dataset() -> pd.DataFrame:
     source = DATA_SOURCE
     if source == "databricks_export":
-        raw_path = DATABRICKS_EXPORT_PATH
+        raw_path = _resolve_data_path(DATABRICKS_EXPORT_PATH)
     else:
-        raw_path = DATASET_PATH
+        raw_path = _resolve_data_path(DATASET_PATH)
 
     df = _read_any_table(raw_path)
     df = _normalize_schema(df)
