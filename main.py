@@ -18,12 +18,29 @@ Run: ``python main.py``. Optional: ``MLFLOW_TRACKING_URI``, ``MLFLOW_EXPERIMENT`
 """
 
 from dotenv import load_dotenv
+from flask import Flask, jsonify
 
 load_dotenv()
 
 from healthcare_app.server import create_app
 
-app = create_app()
+try:
+    app = create_app()
+except Exception as exc:
+    startup_error = str(exc)
+    app = Flask(__name__)
+
+    @app.route("/", methods=["GET"])
+    def startup_failed_home():
+        return (
+            "TrustCare startup failed on this runtime. "
+            "Check /health for initialization error details.",
+            503,
+        )
+
+    @app.route("/health", methods=["GET"])
+    def startup_failed_health():
+        return jsonify({"status": "error", "startup_error": startup_error}), 503
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
