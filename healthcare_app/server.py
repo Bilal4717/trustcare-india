@@ -2,8 +2,10 @@ import csv
 import difflib
 import io
 import os
+import re
 
 from flask import Flask, Response, jsonify, render_template, request
+from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
 
 from healthcare_app.agents import AgentRuntime
@@ -21,7 +23,7 @@ from healthcare_app.config import (
     VECTORSTORE_PATH_HF,
     resolve_llm_backend,
 )
-from healthcare_app.data import get_vectorstore, load_dataset
+from healthcare_app.data import _build_metadata, build_facility_text, get_vectorstore, load_dataset
 from healthcare_app.databricks_client import (
     configure_databricks_mlflow,
     get_databricks_embeddings,
@@ -39,6 +41,46 @@ from healthcare_app.statistics import (
     score_confidence_interval,
 )
 from healthcare_app.confidence_metrics import confidence_metrics_report
+
+
+class _KeywordFallbackRetriever:
+    """
+    Lightweight zero-embedding retriever for serverless quota fallback.
+    """
+
+    def __init__(self, docs, k: int = 10):
+        self.docs = docs or []
+        self.k = max(1, int(k))
+
+    @staticmethod
+    def _tokens(text: str):
+        return [t for t in re.split(r"[^a-z0-9]+", (text or "").lower()) if len(t) >= 3]
+
+    def invoke(self, query: str):
+        q_tokens = self._tokens(query)
+        if not q_tokens:
+            return self.docs[: self.k]
+        scored = []
+        for i, doc in enumerate(self.docs):
+            blob = f"{doc.page_content} {doc.metadata}".lower()
+            hits = sum(1 for t in q_tokens if t in blob)
+            if hits == 0:
+                continue
+            # Stable tie-breaker keeps deterministic order.
+            scored.append((hits, -i, doc))
+        scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        return [d for _, _, d in scored[: self.k]]
+
+
+def _build_keyword_retriever(df, k: int = 10):
+    docs = []
+    for idx, row in df.iterrows():
+        text = build_facility_text(row)
+        if len(text.strip()) < 20:
+            continue
+        docs.append(Document(page_content=text, metadata=_build_metadata(idx, row)))
+    return _KeywordFallbackRetriever(docs, k=k)
+
 
 try:
     import mlflow
@@ -166,6 +208,7 @@ def create_app() -> Flask:
     llm = None
     embedding = None
     retriever = None
+    startup_warning = None
     vs_path = VECTORSTORE_PATH_HF
     embed_label = f"local:{LOCAL_EMBED_MODEL}"
     _backend = "local"
@@ -222,8 +265,26 @@ def create_app() -> Flask:
         retriever = get_mosaic_vector_search_retriever(embedding, k=10)
 
     if retriever is None:
-        vectorstore = get_vectorstore(df, embedding, vectorstore_path=vs_path)
-        retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
+        try:
+            vectorstore = get_vectorstore(df, embedding, vectorstore_path=vs_path)
+            retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
+        except Exception as exc:
+            err = str(exc)
+            err_l = err.lower()
+            quota_like = (
+                "resource_exhausted" in err_l
+                or "quota" in err_l
+                or "429" in err_l
+                or "rate limit" in err_l
+            )
+            if not quota_like:
+                raise
+            retriever = _build_keyword_retriever(df, k=10)
+            startup_warning = (
+                "Embedding quota/rate limit hit during startup. "
+                "Using keyword fallback retriever (reduced semantic quality)."
+            )
+            vs_path = "keyword_fallback_retriever"
 
     runtime = AgentRuntime(llm, retriever, df, tavily_client=tavily_client)
     healthcare_bot = build_graph(runtime)
@@ -277,6 +338,7 @@ def create_app() -> Flask:
                     "states_covered": _quality_report.get("states_covered", 0),
                     "overall_completeness": _quality_report.get("overall_completeness", 0),
                 },
+                "startup_warning": startup_warning,
             }
         )
 
