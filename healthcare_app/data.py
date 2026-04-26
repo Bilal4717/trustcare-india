@@ -6,6 +6,7 @@ import pandas as pd
 from langchain_core.documents import Document
 
 from healthcare_app.config import (
+    BASE_DIR,
     CHUNK_BATCH_SIZE,
     DATASET_PATH,
     DATA_SOURCE,
@@ -102,12 +103,25 @@ def _ensure_required_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _resolve_data_path(path: str) -> str:
+    """
+    Windows/macOS absolute paths are preserved. Relative paths and bare filenames
+    are resolved against the app root (BASE_DIR) so cloud deploys work without C:\\… locals.
+    """
+    p = (path or "").strip()
+    if not p:
+        return p
+    if os.path.isabs(p):
+        return p
+    return os.path.join(BASE_DIR, p)
+
+
 def load_dataset() -> pd.DataFrame:
     source = DATA_SOURCE
     if source == "databricks_export":
-        raw_path = DATABRICKS_EXPORT_PATH
+        raw_path = _resolve_data_path(DATABRICKS_EXPORT_PATH)
     else:
-        raw_path = DATASET_PATH
+        raw_path = _resolve_data_path(DATASET_PATH)
 
     df = _read_any_table(raw_path)
     df = _normalize_schema(df)
@@ -236,9 +250,12 @@ def format_docs_for_llm(docs: list) -> str:
     lines = []
     for i, doc in enumerate(docs, start=1):
         m = doc.metadata
+        rid = m.get("facility_id")
+        rid_line = f"    Row ID (dataset index): {rid}\n" if rid is not None else ""
         lines.append(
             f"[{i}] {m.get('name', 'Unknown')} ({m.get('type', '')})\n"
             f"    Location: {m.get('city', '')}, {m.get('state', '')} — PIN {m.get('pin', '')}\n"
+            f"{rid_line}"
             f"    {doc.page_content[:400]}..."
         )
     return "\n\n".join(lines)

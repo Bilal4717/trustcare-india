@@ -4,6 +4,7 @@ import pandas as pd
 from langchain_core.documents import Document
 
 from healthcare_app.agents import AgentRuntime
+from healthcare_app.statistics import conclusion_uncertainty_bundle
 
 
 class TestMVPSmoke(unittest.TestCase):
@@ -59,6 +60,22 @@ class TestMVPSmoke(unittest.TestCase):
         constrained, summary = self.runtime._apply_query_constraints(ranked, query)
         self.assertEqual(len(constrained), 1)
         self.assertIn("constraint_screen_pass", summary["matched_attributes"])
+
+    def test_conclusion_uncertainty_bundle_with_retrieval(self):
+        docs = [
+            {"name": "A", "completeness": 0.9},
+            {"name": "B", "completeness": 0.5},
+        ]
+        b = conclusion_uncertainty_bundle(
+            0.8,
+            docs,
+            overall_dataset_completeness=0.55,
+            intent="query",
+        )
+        self.assertIn("lower", b["confidence_interval"])
+        self.assertIn("upper", b["confidence_interval"])
+        self.assertIn("uncertainty_framing", b)
+        self.assertIsNotNone(b.get("completeness_bootstrap"))
 
     def test_high_severity_contradictions_detected(self):
         claims = "advanced surgery | icu"

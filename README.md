@@ -103,6 +103,77 @@ Open:
 - `http://127.0.0.1:5001/` - UI
 - `http://127.0.0.1:5001/health` - runtime/provider status
 
+## Deploy on Render (Web Service)
+
+1. **Push** this repo to GitHub (include `VF_Hackathon_Dataset_India_Large.xlsx` if you rely on the default `DATASET_PATH`).
+
+2. In [Render](https://dashboard.render.com): **New** → **Blueprint** (or **Web Service** if you prefer manual setup).
+
+3. **Blueprint path:** `render.yaml` (already in the repo). Approve the service.
+
+4. **Environment variables** (service → *Environment*): add at least **`GEMINI_API_KEY`** or **`GOOGLE_API_KEY`**. Mark them **Secret**. Optional: `TAVILY_API_KEY`, `LLM_PROVIDER`, `GEMINI_CHAT_MODEL`, `GEMINI_EMBED_MODEL`, `CHAT_SINGLE_PASS_VALIDATION`, etc. (see `.env.example`).
+
+5. **Build / start** are defined in `render.yaml`: installs `requirements.render.txt` (app deps + `faiss-cpu` + `gunicorn`), starts Gunicorn on **`$PORT`**.
+
+6. **Health check:** `GET /health` — if deploys fail, increase instance type (free tier can run out of RAM while building the FAISS index) or pre-build `facility_faiss_index_*` and ship it (may require `git` tracking or an external object store + code change).
+
+7. **Smoke test:** open the Render URL with paths `/`, `/app`, and `/health`.
+
+*Manual Web Service (no Blueprint):* Runtime **Python 3.12**, build `pip install -r requirements.render.txt`, start `gunicorn -w 1 -b 0.0.0.0:$PORT --timeout 300 main:app`, add the same env vars.
+
+## Deploy on Vultr (VPS) — recommended for this app
+
+Serverless hosts (Vercel) are a poor fit for loading a large Excel file, building FAISS, and long LLM runs. A small **Linux VM** avoids function timeouts and bundle limits.
+
+1. **Create a server:** [Vultr](https://www.vultr.com) → Deploy → **Cloud Compute** → **Ubuntu 22.04 LTS** → pick a region near users → **$6/mo** (1 GB RAM) or **$12/mo** (2 GB) for safer FAISS builds. Add your SSH key.
+
+2. **Firewall (Vultr panel or UFW):** allow **22** (SSH), **80** (HTTP), **443** (HTTPS).
+
+3. **SSH in** and install dependencies:
+
+```bash
+sudo apt update && sudo apt install -y python3.12-venv python3-pip git nginx
+```
+
+4. **App user & code**
+
+```bash
+sudo adduser --disabled-password --gecos "" trustcare
+sudo mkdir -p /opt/trustcare && sudo chown trustcare:trustcare /opt/trustcare
+sudo -u trustcare -H bash -c 'cd /opt/trustcare && git clone https://github.com/Bilal4717/trustcare-india.git app && cd app && python3.12 -m venv .venv && . .venv/bin/activate && pip install -U pip && pip install -r requirements.local.txt'
+```
+
+(Change the URL if you fork. Use `requirements.txt` if you skip local ML extras and rely on Gemini only.)
+
+5. **Environment file** (as `trustcare` user): create `/opt/trustcare/app/.env` with `GEMINI_API_KEY=...`, `DATA_SOURCE=local_excel`, etc. — same keys as local. **Chmod 600** the file.
+
+6. **Gunicorn systemd service** — create `/etc/systemd/system/trustcare.service`:
+
+```ini
+[Unit]
+Description=TrustCare India Flask
+After=network.target
+
+[Service]
+User=trustcare
+Group=trustcare
+WorkingDirectory=/opt/trustcare/app
+EnvironmentFile=/opt/trustcare/app/.env
+ExecStart=/opt/trustcare/app/.venv/bin/gunicorn -w 1 -b 127.0.0.1:5001 --timeout 300 main:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then: `sudo systemctl daemon-reload && sudo systemctl enable --now trustcare`
+
+7. **Nginx reverse proxy** — site config proxying to `http://127.0.0.1:5001`, then `sudo certbot --nginx` for HTTPS on your domain.
+
+8. **Dataset:** ensure `VF_Hackathon_Dataset_India_Large.xlsx` is in `/opt/trustcare/app` (pulled with git) or set `DATASET_PATH` in `.env` to an absolute path.
+
+**Vercel note:** if `vercel.json` `functions` patterns fail to match, use a glob (`api/**/*.py`) or set **Function max duration** in the Vercel project settings instead. For this workload, a VPS is simpler.
+
 ## API endpoints
 
 - `POST /chat`

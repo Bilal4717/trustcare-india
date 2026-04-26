@@ -42,6 +42,13 @@ def configure_mlflow() -> bool:
     return True
 
 
+def mlflow_tracing_available() -> bool:
+    """True when MLflow 3-style start_span can be used for agent step traces."""
+    if not MLFLOW_ENABLED or mlflow is None:
+        return False
+    return callable(getattr(mlflow, "start_span", None))
+
+
 @contextmanager
 def traced_step(name: str, attrs: Optional[Dict[str, str]] = None):
     """

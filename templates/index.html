@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TrustCare India — Intelligence Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- Leaflet for interactive map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -277,6 +280,125 @@
     .ci-fill  { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--a2)); }
     .ci-marker{ position: absolute; top: -4px; width: 2px; height: 14px; background: #fff; border-radius: 1px; }
 
+    /* ── CI band (correct interval visualization on 0–1 scale) ── */
+    .ci-track-v2 {
+      position: relative;
+      height: 14px;
+      margin-top: 4px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .ci-interval-shade {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, rgba(59,130,246,.35), rgba(96,165,250,.28));
+      border: 1px solid rgba(96,165,250,.35);
+      pointer-events: none;
+    }
+    .ci-est-tick {
+      position: absolute;
+      top: -3px;
+      width: 3px;
+      height: 20px;
+      margin-left: -1.5px;
+      background: #f8fafc;
+      border-radius: 2px;
+      box-shadow: 0 0 0 2px rgba(15,23,42,.9);
+      pointer-events: none;
+    }
+
+    /* ── Answer + uncertainty split ── */
+    .answer-main {
+      min-height: 100px;
+      max-height: min(52vh, 440px);
+      font-size: .9rem;
+      line-height: 1.65;
+      letter-spacing: .01em;
+    }
+    .uncertainty-panel {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(59,130,246,.22);
+      background: linear-gradient(165deg, rgba(59,130,246,.08), rgba(15,23,42,.5));
+      display: none;
+    }
+    .uncertainty-panel.show { display: block; }
+    .uncertainty-panel-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .uncertainty-panel-head > span:first-child {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #93c5fd;
+    }
+    .uncertainty-body {
+      font-size: .82rem;
+      line-height: 1.65;
+      color: #c7d8f5;
+      margin: 0;
+    }
+    .rq-chip-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; flex: 1; }
+    .rq-chip {
+      font-size: .68rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.2);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .rq-chip b { color: #e2e8f0; font-weight: 600; }
+
+    /* ── large panels: calmer hover ── */
+    .panel-card {
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .panel-card:hover {
+      transform: none;
+      border-color: rgba(96,165,250,.32);
+      box-shadow: 0 10px 28px rgba(0,0,0,.26);
+    }
+
+    .trust-scroll {
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .challenge-rubric {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(59, 130, 246, 0.22);
+      background: linear-gradient(165deg, rgba(59, 130, 246, 0.07), rgba(15, 23, 42, 0.55));
+      font-size: .78rem;
+      color: #a8bfdc;
+      line-height: 1.55;
+    }
+    .challenge-rubric h3 {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #93c5fd;
+      margin-bottom: 8px;
+    }
+    .challenge-rubric ul { margin: 0; padding-left: 1.1rem; }
+    .challenge-rubric li { margin: 3px 0; }
+    .challenge-rubric .ok { color: #86efac; }
+    .challenge-rubric .partial { color: #fcd34d; }
+
     /* ── cot steps ── */
     .cot-list { list-style: none; }
     .cot-list li { display: flex; gap: 9px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: .82rem; color: var(--muted); }
@@ -541,10 +663,15 @@
         </div>
       </section>
 
+      <div id="challenge-rubric" class="challenge-rubric" aria-label="Challenge rubric alignment">
+        <h3>Challenge alignment</h3>
+        <p style="color:var(--muted);font-size:.76rem">Loading rubric status from <code>/health</code>…</p>
+      </div>
+
       <div class="grid-2" style="margin-bottom:12px">
 
         <!-- Query input -->
-        <div class="card" style="position:relative">
+        <div class="card panel-card" style="position:relative">
           <div class="loading-overlay" id="query-loading"><div class="spinner"></div></div>
           <div class="card-title">Assistant Query</div>
           <textarea id="q" placeholder="e.g. Find nearest emergency appendectomy support in rural Bihar with part-time staffing signals…"></textarea>
@@ -561,30 +688,42 @@
         </div>
 
         <!-- Runtime metrics -->
-        <div class="card">
+        <div class="card panel-card">
           <div class="card-title">Live Runtime</div>
           <div class="grid-2" style="gap:8px">
             <div class="metric"><div class="k">LLM Backend</div><div class="v blue" id="m-backend">—</div></div>
             <div class="metric"><div class="k">Chat Model</div><div class="v" id="m-model" style="font-size:.85rem">—</div></div>
             <div class="metric"><div class="k">Embeddings</div><div class="v" id="m-embed" style="font-size:.78rem">—</div></div>
             <div class="metric"><div class="k">Tavily Web</div><div class="v" id="m-tavily">—</div></div>
+            <div class="metric"><div class="k">Retriever top‑K</div><div class="v" id="m-retrieval-k">—</div></div>
+            <div class="metric"><div class="k">Validation mode</div><div class="v" id="m-validate-mode" style="font-size:.78rem">—</div></div>
           </div>
           <div style="margin-top:10px">
             <div class="metric"><div class="k">Data Source</div><div class="v blue" id="m-datasource" style="font-size:.82rem">—</div></div>
+          </div>
+          <div style="margin-top:8px">
+            <div class="metric"><div class="k">MLflow tracing</div><div class="v" id="m-mlflow" style="font-size:.78rem">—</div></div>
           </div>
         </div>
       </div>
 
       <div class="grid-2" style="margin-bottom:12px">
         <!-- Answer -->
-        <div class="card">
+        <div class="card panel-card">
           <div class="card-title">Answer <span class="tag" id="intent-tag">—</span></div>
-          <div class="answer-box" id="answer">Run a query to see ranked recommendations and citations.</div>
+          <div class="answer-box answer-main" id="answer">Run a query to see ranked recommendations and citations.</div>
+          <div id="uncertainty-panel" class="uncertainty-panel" aria-live="polite">
+            <div class="uncertainty-panel-head">
+              <span>Data uncertainty</span>
+              <div id="rq-strip" class="rq-chip-row"></div>
+            </div>
+            <p id="uncertainty-text" class="uncertainty-body"></p>
+          </div>
           <div id="result-chips" class="result-chips"></div>
         </div>
 
         <!-- Trust & confidence -->
-        <div class="card">
+        <div class="card panel-card">
           <div class="card-title">Trust &amp; Confidence</div>
           <div style="display:flex;gap:10px;align-items:flex-start">
             <div class="gauge-wrap">
@@ -602,26 +741,31 @@
               </svg>
               <div class="gauge-label" id="gauge-band">Confidence Band</div>
             </div>
-            <div style="flex:1">
+            <div style="flex:1;min-width:0">
               <div class="grid-2" style="gap:6px">
                 <div class="metric"><div class="k">Trust Score</div><div class="v" id="trust-score">—</div></div>
                 <div class="metric"><div class="k">Flags</div><div class="v red" id="flags-count">—</div></div>
               </div>
-              <!-- Confidence interval bar -->
               <div class="ci-bar-wrap" id="ci-wrap" style="display:none">
-                <div class="ci-label">Confidence Interval (95%)</div>
-                <div class="ci-track">
-                  <div class="ci-fill" id="ci-fill"></div>
-                  <div class="ci-marker" id="ci-marker"></div>
+                <div class="ci-label">Score interval (data‑adjusted)</div>
+                <div class="ci-track-v2" id="ci-track-v2">
+                  <div class="ci-interval-shade" id="ci-interval-shade"></div>
+                  <div class="ci-est-tick" id="ci-est-tick"></div>
                 </div>
-                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:3px">
-                  <span id="ci-lo">—</span><span id="ci-hi">—</span>
+                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:5px">
+                  <span>0</span>
+                  <span id="ci-mid">estimate —</span>
+                  <span>1</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#93c5fd;margin-top:2px">
+                  <span>lo <span id="ci-lo">—</span></span>
+                  <span>hi <span id="ci-hi">—</span></span>
                 </div>
               </div>
             </div>
           </div>
           <!-- Trust flags -->
-          <div id="trust-flags" style="margin-top:10px"></div>
+          <div id="trust-flags" class="trust-scroll" style="margin-top:10px"></div>
           <details class="details-clean" style="margin-top:8px">
             <summary>Technical details (reason codes, validator loop, trust evidence)</summary>
             <div class="details-content">
@@ -635,13 +779,13 @@
 
       <div class="grid-2">
         <!-- Chain of thought -->
-        <div class="card">
+        <div class="card panel-card">
           <div class="card-title">Reasoning Trace</div>
           <ol id="cot" class="cot-list"><li>No steps yet.</li></ol>
         </div>
 
         <!-- Evidence citations -->
-        <div class="card">
+        <div class="card panel-card">
           <div class="card-title">Row-Level Evidence</div>
           <div id="citations"><p style="color:var(--muted);font-size:.84rem">Evidence snippets appear here after a query.</p></div>
         </div>
@@ -817,6 +961,49 @@ function renderTopRiskPins(items) {
   `).join("");
 }
 
+function renderChallengeRubric(cr) {
+  const el = document.getElementById("challenge-rubric");
+  if (!el) return;
+  if (!cr || typeof cr !== "object") {
+    el.innerHTML = "<h3>Challenge alignment</h3><p style=\"color:var(--muted);font-size:.76rem\">No rubric in /health response.</p>";
+    return;
+  }
+  const m = cr.mvp || {};
+  const s = cr.stretch || {};
+  const r = cr.research || {};
+  const d = cr.databricks_stack || {};
+  const nb = cr.workspace_notebook_integrations || [];
+  const li = (ok, label) => `<li class="${ok ? "ok" : "partial"}">${ok ? "✓" : "○"} ${esc(label)}</li>`;
+  el.innerHTML = `
+    <h3>Challenge alignment</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">
+      <div><strong style="color:#dbeafe;font-size:.72rem">MVP</strong><ul style="margin-top:6px">
+        ${li(!!m.multi_attribute_facility_reasoning, "Multi-attribute facility reasoning")}
+        ${li(!!m.audit_unstructured_extraction_crosscheck, "Audit + unstructured extraction cross-check")}
+        ${li(!!m.trust_scorer_claim_evidence_contradictions, "Trust scorer (claims vs evidence)")}
+      </ul></div>
+      <div><strong style="color:#dbeafe;font-size:.72rem">Stretch</strong><ul style="margin-top:6px">
+        ${li(!!s.row_level_citations_query_and_trust, "Row-level citations (query + trust)")}
+        ${li(!!s.chain_of_thought_steps, "Chain-of-thought trace")}
+        ${li(!!s.validator_self_correction_loop, "Validator self-correction loop")}
+        ${li(!!s.validator_single_pass_fast_mode, "Single-pass validation (optional)")}
+        ${li(!!s.crisis_map_pin_deserts, "PIN-level crisis map")}
+        ${li(!!s.mlflow_nested_step_spans, "MLflow nested step spans")}
+      </ul></div>
+      <div><strong style="color:#dbeafe;font-size:.72rem">Research</strong><ul style="margin-top:6px">
+        ${li(!!r.confidence_and_prediction_intervals, "Confidence / prediction intervals")}
+        ${li(!!r.dataset_completeness_aware_uncertainty, "Completeness-aware uncertainty")}
+      </ul></div>
+      <div><strong style="color:#dbeafe;font-size:.72rem">Databricks stack</strong><ul style="margin-top:6px">
+        ${li(!!d.configured, "UC + token configured for runtime")}
+        ${li(d.vector_retrieval === "mosaic", "Mosaic vector search")}
+        ${li(d.vector_retrieval === "faiss_local", "Local FAISS (default dev path)")}
+      </ul></div>
+    </div>
+    ${nb.length ? `<p style="margin-top:10px;font-size:.72rem;color:var(--muted);line-height:1.5">${esc(nb[0])}</p>` : ""}
+  `;
+}
+
 // ── System health ──────────────────────────────────────────────────────────
 async function loadHealth() {
   try {
@@ -828,11 +1015,48 @@ async function loadHealth() {
     document.getElementById("m-embed").textContent = h.embeddings || "—";
     document.getElementById("m-tavily").textContent = h.tavily_configured ? "✓ Enabled" : "× Disabled";
     document.getElementById("m-datasource").textContent = (h.databricks?.configured ? "Databricks Unity Catalog" : "Local Excel") + (h.data_source ? " · " + h.data_source : "");
+    const rk = document.getElementById("m-retrieval-k");
+    const vm = document.getElementById("m-validate-mode");
+    if (rk) rk.textContent = h.retrieval_top_k != null ? String(h.retrieval_top_k) : "—";
+    if (vm) vm.textContent = h.single_pass_validation ? "single-pass (faster)" : "self-correct loop";
+    const mf = document.getElementById("m-mlflow");
+    if (mf) {
+      if (h.mlflow_tracing_api) mf.innerHTML = "<span class='ok' style='color:#86efac'>nested spans</span>";
+      else if (h.mlflow_enabled) mf.textContent = "enabled (no span API)";
+      else mf.textContent = "off";
+    }
+    renderChallengeRubric(h.challenge_rubric);
   } catch {
     document.getElementById("sys-line").textContent = "Health check failed";
   }
 }
 loadHealth();
+
+function splitAnswerUncertainty(raw) {
+  const sep = "--- Uncertainty and data limits ---";
+  if (!raw) return { main: "", extra: "" };
+  const i = raw.indexOf(sep);
+  if (i === -1) return { main: raw, extra: "" };
+  return { main: raw.slice(0, i).trimEnd(), extra: raw.slice(i + sep.length).trim() };
+}
+
+function renderRetrievalQualityChips(rq) {
+  const el = document.getElementById("rq-strip");
+  if (!rq || typeof rq !== "object") {
+    el.innerHTML = "";
+    return;
+  }
+  const chips = [];
+  if (rq.n_retrieved != null) chips.push(`<span class="rq-chip"><b>rows</b> ${esc(String(rq.n_retrieved))}</span>`);
+  if (rq.mean_completeness != null) chips.push(`<span class="rq-chip"><b>mean</b> ${Number(rq.mean_completeness).toFixed(2)}</span>`);
+  if (rq.min_completeness != null) chips.push(`<span class="rq-chip"><b>min</b> ${Number(rq.min_completeness).toFixed(2)}</span>`);
+  if (rq.effective_completeness != null) chips.push(`<span class="rq-chip"><b>effective</b> ${Number(rq.effective_completeness).toFixed(2)}</span>`);
+  const boot = rq.completeness_bootstrap;
+  if (boot && boot.lower != null && boot.upper != null) {
+    chips.push(`<span class="rq-chip"><b>boot</b> [${Number(boot.lower).toFixed(2)}, ${Number(boot.upper).toFixed(2)}]</span>`);
+  }
+  el.innerHTML = chips.join("");
+}
 
 // ── Trust gauge ────────────────────────────────────────────────────────────
 function setGauge(score) {
@@ -846,12 +1070,24 @@ function setGauge(score) {
 
 // ── Render query response ──────────────────────────────────────────────────
 function renderResponse(data) {
-  // Answer
-  document.getElementById("answer").textContent = data.response || "(No response)";
+  const split = splitAnswerUncertainty(data.response || "");
+  const framing = (data.uncertainty_framing || split.extra || "").trim();
+  document.getElementById("answer").textContent = split.main || "(No response)";
+  const up = document.getElementById("uncertainty-panel");
+  const ut = document.getElementById("uncertainty-text");
+  if (framing) {
+    up.classList.add("show");
+    ut.textContent = framing;
+  } else {
+    up.classList.remove("show");
+    ut.textContent = "";
+  }
+  renderRetrievalQualityChips(data.retrieval_quality_stats);
 
   // Intent tag
   const tag = document.getElementById("intent-tag");
-  tag.textContent = data.intent || "—";
+  const intv = data.intent || "query";
+  tag.textContent = intv === "out_of_scope" ? "out of scope" : intv;
 
   // Gauge
   setGauge(data.confidence_score);
@@ -883,14 +1119,22 @@ function renderResponse(data) {
     flagsEl.innerHTML = flags.map(f => `<div class='flag-item bad'>${esc(f)}</div>`).join("");
   }
 
-  // Confidence interval bar
   const ci = data.confidence_interval;
-  if (ci && ci.lower != null) {
+  if (ci && ci.lower != null && ci.upper != null) {
     document.getElementById("ci-wrap").style.display = "";
-    document.getElementById("ci-fill").style.width = (ci.estimate * 100) + "%";
-    document.getElementById("ci-marker").style.left = (ci.estimate * 100) + "%";
-    document.getElementById("ci-lo").textContent = ci.lower.toFixed(3);
-    document.getElementById("ci-hi").textContent = ci.upper.toFixed(3);
+    const lo = Math.max(0, Math.min(1, Number(ci.lower)));
+    const hi = Math.max(0, Math.min(1, Number(ci.upper)));
+    const est = ci.estimate != null ? Math.max(0, Math.min(1, Number(ci.estimate))) : (lo + hi) / 2;
+    const shade = document.getElementById("ci-interval-shade");
+    const tick = document.getElementById("ci-est-tick");
+    shade.style.left = (lo * 100) + "%";
+    shade.style.width = Math.max(0.8, (hi - lo) * 100) + "%";
+    tick.style.left = (est * 100) + "%";
+    document.getElementById("ci-lo").textContent = lo.toFixed(3);
+    document.getElementById("ci-hi").textContent = hi.toFixed(3);
+    document.getElementById("ci-mid").textContent = "estimate " + est.toFixed(3);
+  } else {
+    document.getElementById("ci-wrap").style.display = "none";
   }
 
   // Reason codes
@@ -926,7 +1170,9 @@ function renderResponse(data) {
         <div class="cite-card">
           <div class="cite-name">${esc(e.flag || "flag")}</div>
           <div style="font-size:.74rem;color:var(--muted);margin-top:3px">
-            penalty=${esc(e.penalty ?? "—")} · field=${esc(e.source_field || "—")} · row=${esc(e.source_row_id ?? "—")}
+            penalty=${esc(e.penalty ?? "—")} · field=${esc(e.source_field || "—")}
+            · <span style="color:#93c5fd">row ${esc(e.source_row_id ?? "—")}</span>
+            ${e.source ? " · " + esc(e.source) : ""}
           </div>
           <div class="cite-text">${esc(e.evidence_sentence || "No evidence sentence available.")}</div>
         </div>
@@ -949,7 +1195,9 @@ function renderResponse(data) {
     citEl.innerHTML = cites.map(c => `
       <div class='cite-card'>
         <div><span class='cite-name'>${esc(c.facility_name||"Unknown")}</span>
-        <span class='cite-pin'>PIN ${esc(c.pin||"—")}</span></div>
+        <span class='cite-pin'>PIN ${esc(c.pin||"—")}</span>
+        ${c.source_row_id != null && c.source_row_id !== "" ? `<span class='cite-pin' style="margin-left:8px">Row ${esc(String(c.source_row_id))}</span>` : ""}
+        </div>
         <div class='cite-text'>${esc(c.evidence_snippet||c.trust_evidence_snippet||"—")}</div>
       </div>`).join("");
   }
@@ -973,6 +1221,9 @@ async function runQuery() {
     renderResponse(data);
   } catch(e) {
     document.getElementById("answer").textContent = "Error: " + e.message;
+    document.getElementById("uncertainty-panel").classList.remove("show");
+    document.getElementById("uncertainty-text").textContent = "";
+    document.getElementById("rq-strip").innerHTML = "";
   } finally {
     overlay.classList.remove("show");
     btn.disabled = false;
@@ -985,7 +1236,12 @@ document.getElementById("q").addEventListener("keydown", e => { if(e.key==="Ente
 document.getElementById("btn-clear").addEventListener("click", () => {
   document.getElementById("q").value = "";
   document.getElementById("answer").textContent = "Cleared.";
+  document.getElementById("uncertainty-panel").classList.remove("show");
+  document.getElementById("uncertainty-text").textContent = "";
+  document.getElementById("rq-strip").innerHTML = "";
+  document.getElementById("ci-wrap").style.display = "none";
   setGauge(null);
+  document.getElementById("intent-tag").textContent = "—";
   document.getElementById("trust-flags").innerHTML = "";
   document.getElementById("reason-codes").innerHTML = "";
   document.getElementById("validator-meta").innerHTML = "";

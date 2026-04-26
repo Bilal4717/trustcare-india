@@ -27,6 +27,10 @@ class HealthcareState(TypedDict):
     planner_summary: Optional[List[dict]]
     validation_attempts: Optional[int]
     correction_applied: Optional[bool]
+    # Statistics-based uncertainty (see statistics.conclusion_uncertainty_bundle)
+    confidence_interval: Optional[dict]
+    uncertainty_framing: Optional[str]
+    retrieval_quality_stats: Optional[dict]
 
 
 class FacilityCapabilities(BaseModel):
