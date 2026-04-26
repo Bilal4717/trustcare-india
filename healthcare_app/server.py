@@ -168,6 +168,7 @@ def create_app() -> Flask:
         return render_template("onboarding.html")
 
     @app.route("/app")
+    @app.route("/index.html")
     def app_workspace():
         return render_template("index.html")
 
