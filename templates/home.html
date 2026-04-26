@@ -211,7 +211,7 @@
       TrustCare India
     </a>
     <div class="nav-links">
-      <span class="nav-badge">MIT Hackathon · Databricks Challenge</span>
+      <span class="nav-badge" id="nav-runtime">MIT Hackathon · Databricks Challenge</span>
       <a class="btn btn-ghost" href="/onboarding.html">Docs</a>
       <a class="btn btn-primary" href="/index.html">Open App →</a>
     </div>
@@ -476,9 +476,12 @@
   document.querySelectorAll(".fade-up").forEach(el => observer.observe(el));
 
   // Live stats from /health
-  fetch("/health")
+  const API_BASE = window.location.port === "5500" ? "http://127.0.0.1:5001" : "";
+  fetch(API_BASE + "/health")
     .then(r => r.json())
     .then(h => {
+      const runtime = document.getElementById("nav-runtime");
+      runtime.textContent = `System online · ${h.llm_backend || "local"}`;
       const ds = h.dataset || {};
       if (ds.total_facilities) {
         document.getElementById("stat-facilities").textContent =
@@ -490,7 +493,10 @@
         document.getElementById("stat-states").textContent = ds.states_covered + "+";
       }
     })
-    .catch(() => {});
+    .catch(() => {
+      const runtime = document.getElementById("nav-runtime");
+      runtime.textContent = "Backend offline · start python main.py";
+    });
 </script>
 </body>
 </html>

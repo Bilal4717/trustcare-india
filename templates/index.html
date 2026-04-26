@@ -15,19 +15,19 @@
 
   <style>
     :root {
-      --bg:     #07090f;
-      --bg-e:   #0e1320;
-      --bg-e2:  #111827;
-      --text:   #f0f4ff;
-      --muted:  #8b9fc7;
-      --line:   #1e2d4a;
-      --line2:  #253350;
-      --accent: #3b82f6;
-      --a2:     #60a5fa;
-      --red:    #ef4444;
-      --green:  #22c55e;
-      --orange: #f59e0b;
-      --bad:    #fb7185;
+      --bg:     #f4f9f8;
+      --bg-e:   #ffffff;
+      --bg-e2:  #f8fcfb;
+      --text:   #16313a;
+      --muted:  #5e7a82;
+      --line:   #d4e6e4;
+      --line2:  #c1dcda;
+      --accent: #147c8f;
+      --a2:     #2aa7a1;
+      --red:    #d9465f;
+      --green:  #1f9d72;
+      --orange: #d78b3f;
+      --bad:    #c23b54;
       --radius: 16px;
       --radius-sm: 12px;
       --space-1: 8px;
@@ -35,13 +35,16 @@
       --space-3: 16px;
       --space-4: 20px;
       --space-5: 24px;
-      --shadow: 0 8px 32px rgba(0,0,0,.45);
+      --shadow: 0 8px 30px rgba(22,49,58,.08);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body {
       font-family: Inter, "Segoe UI", system-ui, sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(900px 500px at 10% -10%, #e6f4f1, transparent 60%),
+        radial-gradient(700px 500px at 100% 0%, #edf8f6, transparent 60%),
+        var(--bg);
       color: var(--text);
       line-height: 1.6;
       font-size: 15px;
@@ -57,13 +60,13 @@
       display: flex; align-items: center; justify-content: space-between;
       gap: var(--space-2); padding: 0 var(--space-4);
       height: 58px;
-      background: rgba(7,9,15,.92);
+      background: rgba(255,255,255,.9);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--line);
       z-index: 200;
     }
     .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 1rem; }
-    .brand-dot { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg,#3b82f6,#60a5fa); box-shadow: 0 0 0 5px rgba(59,130,246,.18); }
+    .brand-dot { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg,#2aa7a1,#147c8f); box-shadow: 0 0 0 5px rgba(42,167,161,.2); }
     .top-links { display: flex; gap: 6px; }
     .top-links a { color: var(--muted); text-decoration: none; font-size: .84rem; border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; background: var(--bg-e); transition: color .15s, border-color .15s; }
     .top-links a:hover { color: var(--text); border-color: var(--line2); }
@@ -77,7 +80,7 @@
       display: flex; gap: 0;
       padding: 0 var(--space-4);
       border-bottom: 1px solid var(--line);
-      background: var(--bg);
+      background: rgba(255,255,255,.85);
     }
     .tab-btn {
       padding: 14px 16px; font-size: .88rem; font-weight: 600;
@@ -87,6 +90,40 @@
     }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-btn:hover:not(.active) { color: var(--text); }
+    .env-alert {
+      display: none;
+      margin: 0 var(--space-4);
+      margin-top: var(--space-3);
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #b9dad7;
+      background: #edf8f6;
+      color: #245560;
+      font-size: .84rem;
+      line-height: 1.5;
+      display: none;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .env-alert.show { display: flex; }
+    .env-alert.warn {
+      border-color: #e7c79b;
+      background: #fff7ea;
+      color: #80521e;
+    }
+    .env-alert a { color: inherit; font-weight: 700; text-decoration: underline; }
+    .env-alert-close {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 4px;
+      cursor: pointer;
+      opacity: .75;
+    }
+    .env-alert-close:hover { opacity: 1; transform: none; }
 
     /* ── body ── */
     .body { flex: 1; overflow: hidden; position: relative; }
@@ -115,29 +152,29 @@
     /* ── form elements ── */
     textarea, input[type="text"] {
       width: 100%; padding: 12px 14px;
-      background: rgba(255,255,255,.04); border: 1px solid var(--line2);
+      background: #fbfefd; border: 1px solid var(--line2);
       border-radius: var(--radius-sm); color: var(--text); font: inherit; font-size: .94rem;
       outline: none; resize: vertical;
       transition: border-color .15s, background .15s;
     }
-    textarea:focus, input[type="text"]:focus { border-color: var(--accent); background: rgba(59,130,246,.06); }
+    textarea:focus, input[type="text"]:focus { border-color: var(--accent); background: #f4fffe; }
     textarea { min-height: 110px; }
     button {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 10px 16px; border: 1px solid var(--line2); border-radius: var(--radius-sm);
-      background: var(--bg-e); color: var(--text); font: inherit; font-size: .9rem;
+      background: #f4fbfa; color: var(--text); font: inherit; font-size: .9rem;
       cursor: pointer; transition: background .15s, border-color .15s, transform .12s;
     }
-    button:hover { background: #1a2540; border-color: var(--line2); transform: translateY(-1px); }
+    button:hover { background: #eaf6f4; border-color: #9bc8c2; transform: translateY(-1px); }
     button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-    .btn-run { background: linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; font-weight:700; border-color:#2563eb; box-shadow: 0 0 0 1px rgba(59,130,246,.3); }
-    .btn-run:hover { background: linear-gradient(135deg,#2563eb,#60a5fa); box-shadow: 0 0 0 1px rgba(59,130,246,.5); }
+    .btn-run { background: linear-gradient(135deg,#0f7586,#147c8f); color:#fff; font-weight:700; border-color:#0f7586; box-shadow: 0 0 0 1px rgba(20,124,143,.2); }
+    .btn-run:hover { background: linear-gradient(135deg,#0d6a79,#2aa7a1); box-shadow: 0 0 0 1px rgba(20,124,143,.35); }
     .btn-sm { padding: 8px 12px; font-size: .82rem; border-radius: 10px; }
     .quick-btn { font-size: .8rem; color: var(--muted); border-color: var(--line); border-radius: 999px; padding: 6px 11px; }
     .quick-btn:hover { color: var(--text); }
 
     /* ── metrics row ── */
-    .metric { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: rgba(255,255,255,.03); }
+    .metric { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: #f6fbfa; }
     .metric .k { font-size: .76rem; color: var(--muted); margin-bottom: 5px; }
     .metric .v { font-size: 1.15rem; font-weight: 700; }
     .v.blue   { color: var(--a2); }
@@ -153,9 +190,9 @@
 
     /* ── answer box ── */
     .answer-box {
-      background: rgba(255,255,255,.025); border: 1px solid var(--line);
+      background: #fcfffe; border: 1px solid var(--line);
       border-radius: 12px; padding: 14px; min-height: 110px;
-      font-size: .9rem; line-height: 1.65; color: #d8e4ff; white-space: pre-wrap;
+      font-size: .9rem; line-height: 1.65; color: #2c505a; white-space: pre-wrap;
       overflow-y: auto; max-height: 340px;
     }
     .skeleton { background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; height: 16px; margin: 6px 0; }
@@ -188,7 +225,7 @@
     .cite-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,.02); }
     .cite-name { font-weight: 600; font-size: .88rem; color: var(--text); }
     .cite-pin  { font-size: .78rem; color: var(--muted); margin-left: 6px; }
-    .cite-text { font-size: .84rem; color: #99b4e0; margin-top: 6px; line-height: 1.6; }
+    .cite-text { font-size: .84rem; color: #4f6f78; margin-top: 6px; line-height: 1.6; }
 
     /* ── flags list ── */
     .flag-item { display: flex; gap: 7px; align-items: flex-start; padding: 5px 0; font-size: .81rem; }
@@ -198,7 +235,7 @@
     .flag-item.ok::before { content: "✓"; }
 
     /* ── reason codes ── */
-    .code-tag { display: inline-block; background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.2); color: var(--a2); font-size: .72rem; border-radius: 6px; padding: 2px 7px; margin: 2px; }
+    .code-tag { display: inline-block; background: rgba(20,124,143,.1); border: 1px solid rgba(20,124,143,.25); color: var(--accent); font-size: .72rem; border-radius: 6px; padding: 2px 7px; margin: 2px; }
 
     /* ── desert table ── */
     .tbl-wrap { overflow: auto; margin-top: 8px; }
@@ -216,9 +253,9 @@
     .map-toolbar { flex-shrink: 0; display: flex; gap: 10px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--bg-e); flex-wrap: wrap; }
     .map-toolbar span { font-size: .84rem; color: var(--muted); }
     #leaflet-map { flex: 1; min-height: 0; }
-    .leaflet-tile-pane { filter: brightness(.75) saturate(.4) hue-rotate(190deg); }
-    .legend-box { background: rgba(14,19,32,.9); border: 1px solid #1e2d4a; border-radius: 10px; padding: 10px 12px; font-size: .76rem; }
-    .leg-row { display: flex; align-items: center; gap: 7px; margin: 4px 0; color: #b0c4e8; }
+    .leaflet-tile-pane { filter: brightness(.95) saturate(.7) hue-rotate(170deg); }
+    .legend-box { background: rgba(255,255,255,.95); border: 1px solid #d4e6e4; border-radius: 10px; padding: 10px 12px; font-size: .76rem; }
+    .leg-row { display: flex; align-items: center; gap: 7px; margin: 4px 0; color: #4f6f78; }
     .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
     /* ── stats panel ── */
@@ -230,7 +267,7 @@
 
     /* ── loading overlay ── */
     .loading-overlay {
-      position: absolute; inset: 0; background: rgba(7,9,15,.75);
+      position: absolute; inset: 0; background: rgba(244,249,248,.78);
       display: none; align-items: center; justify-content: center;
       z-index: 50; border-radius: var(--radius);
     }
@@ -280,6 +317,10 @@
 
   <!-- ── Body ── -->
   <div class="body">
+    <div id="env-alert" class="env-alert">
+      <div id="env-alert-text"></div>
+      <button class="env-alert-close" id="env-alert-close" aria-label="Dismiss notice">×</button>
+    </div>
 
     <!-- ════════════════ QUERY PANEL ════════════════ -->
     <div id="panel-query" class="tab-panel active">
@@ -496,8 +537,37 @@ tabs.forEach(btn => {
 function esc(s) {
   return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
+const IS_STATIC_PREVIEW = window.location.port === "5500";
+const API_BASE = window.location.port === "5500" ? "http://127.0.0.1:5001" : "";
+function showEnvAlert(msg, tone = "info") {
+  const el = document.getElementById("env-alert");
+  const txt = document.getElementById("env-alert-text");
+  txt.innerHTML = msg;
+  el.classList.remove("warn");
+  if (tone === "warn") el.classList.add("warn");
+  el.classList.add("show");
+}
+function hideEnvAlert() {
+  document.getElementById("env-alert").classList.remove("show");
+}
+function toUserError(err) {
+  const msg = String(err?.message || err || "Unknown error");
+  if (msg.includes("Backend API is not reachable")) {
+    return "Backend not connected. Start Flask with: python main.py, then open http://127.0.0.1:5001/app";
+  }
+  return msg;
+}
 async function fetchJson(url, opts={}) {
-  const r = await fetch(url, opts);
+  const target = url.startsWith("http") ? url : API_BASE + url;
+  const r = await fetch(target, opts);
+  const ct = r.headers.get("content-type") || "";
+  if (!ct.includes("application/json")) {
+    const body = await r.text();
+    if (body.includes("<!DOCTYPE") || body.includes("<html")) {
+      throw new Error("Backend API is not reachable. Start Flask with: python main.py and open http://127.0.0.1:5001/app");
+    }
+    throw new Error("Unexpected response from server");
+  }
   const d = await r.json();
   if (!r.ok) throw new Error(d.error || d.response || "HTTP " + r.status);
   return d;
@@ -505,6 +575,9 @@ async function fetchJson(url, opts={}) {
 
 // ── System health ──────────────────────────────────────────────────────────
 async function loadHealth() {
+  if (IS_STATIC_PREVIEW) {
+    showEnvAlert("Preview mode on <b>:5500</b>. API requests are sent to <b>http://127.0.0.1:5001</b>.");
+  }
   try {
     const h = await fetchJson("/health");
     document.getElementById("sys-dot").classList.add("ok");
@@ -514,11 +587,16 @@ async function loadHealth() {
     document.getElementById("m-embed").textContent = h.embeddings || "—";
     document.getElementById("m-tavily").textContent = h.tavily_configured ? "✓ Enabled" : "× Disabled";
     document.getElementById("m-datasource").textContent = (h.databricks?.configured ? "Databricks Unity Catalog" : "Local Excel") + (h.data_source ? " · " + h.data_source : "");
-  } catch {
-    document.getElementById("sys-line").textContent = "Health check failed";
+  } catch (e) {
+    document.getElementById("sys-line").textContent = "Backend offline";
+    document.getElementById("answer").textContent = "Setup required: start Flask backend (python main.py) to run queries and audits.";
+    if (IS_STATIC_PREVIEW) {
+      showEnvAlert("Backend is not reachable on <b>:5001</b>. Start it with <code>python main.py</code>, then refresh.", "warn");
+    }
   }
 }
 loadHealth();
+document.getElementById("env-alert-close").addEventListener("click", hideEnvAlert);
 
 // ── Trust gauge ────────────────────────────────────────────────────────────
 function setGauge(score) {
@@ -610,7 +688,7 @@ async function runQuery() {
     });
     renderResponse(data);
   } catch(e) {
-    document.getElementById("answer").textContent = "Error: " + e.message;
+    document.getElementById("answer").textContent = "Error: " + toUserError(e);
   } finally {
     overlay.classList.remove("show");
     btn.disabled = false;
@@ -696,7 +774,7 @@ async function runAudit() {
       </div>`).join("");
 
   } catch(e) {
-    document.getElementById("audit-caps").innerHTML = `<p style='color:var(--bad)'>Error: ${esc(e.message)}</p>`;
+    document.getElementById("audit-caps").innerHTML = `<p style='color:var(--bad)'>Error: ${esc(toUserError(e))}</p>`;
   } finally {
     overlay.classList.remove("show"); btn.disabled = false; btn.textContent = "Audit";
   }

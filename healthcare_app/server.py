@@ -65,6 +65,22 @@ def create_app() -> Flask:
     template_dir = os.path.join(BASE_DIR, "templates")
     app = Flask(__name__, template_folder=template_dir)
 
+    @app.after_request
+    def add_dev_cors_headers(resp):
+        # Allow static preview on :5500 to call Flask API on :5001.
+        origin = request.headers.get("Origin", "")
+        if origin in {"http://127.0.0.1:5500", "http://localhost:5500"}:
+            resp.headers["Access-Control-Allow-Origin"] = origin
+            resp.headers["Vary"] = "Origin"
+            resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+            resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        return resp
+
+    @app.before_request
+    def handle_cors_preflight():
+        if request.method == "OPTIONS":
+            return ("", 204)
+
     # ── MLflow setup ──────────────────────────────────────────────────────────
     # Prefer Databricks tracking server if configured, else local MLflow
     if is_databricks_configured():
