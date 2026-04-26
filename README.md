@@ -107,6 +107,9 @@ Open:
     - `trust_flags`
     - `chain_of_thought`
     - `source_citations`
+    - `trust_evidence_map` (flag -> exact supporting sentence / metadata)
+    - `validation_attempts`, `correction_applied` (self-correction loop telemetry)
+    - `trace_run_id` (MLflow run id when available)
     - `desert_regions` (when relevant)
 
 - `POST /audit`
@@ -118,9 +121,18 @@ Open:
 
 - `GET /map`
   - returns GeoJSON-like point features for visualization
+  - query params: `state`, `priority`, `min_severity`, `top_n`
+  - includes `top_risk_pins` for ranked crisis triage
 
 - `GET /health`
   - backend, model, embedding, vector index status
+
+- `GET /metrics/confidence`
+  - confidence calibration diagnostics:
+    - `empirical_coverage_proxy` vs `target_coverage`
+    - interval width statistics
+    - uncertainty component breakdown
+    - regional proxy summary
 
 ## Data
 
@@ -132,6 +144,37 @@ The app normalizes null-like values, cleans PIN data, computes completeness hint
 ## Observability
 
 `healthcare_app/observability.py` supports MLflow step-level tracing with graceful fallback if MLflow is unavailable.
+
+## Stretch goals implemented
+
+- **Agentic traceability**
+  - Row-level citations + reasoning trace in UI.
+  - Trust flag evidence mapping (`trust_evidence_map`) with penalty and source metadata.
+  - MLflow-compatible tracing hooks and API run id emission (`trace_run_id`).
+
+- **Self-correction loop**
+  - Graph-level validator retry path:
+    - core agent -> validator -> correction -> validator -> response
+  - Exposes `validation_attempts` and `correction_applied` in API/UI.
+
+- **Dynamic crisis mapping**
+  - Interactive Leaflet map with facility and desert overlays.
+  - Filterable desert view by state/priority/severity, top-risk PIN ranking, and CSV export.
+
+## 2-minute demo script
+
+1. Open `/app` and run:
+   - `Find the nearest facility in rural Bihar that can perform emergency appendectomy and uses part-time doctors`
+2. Show:
+   - answer + confidence band
+   - trust flags and **Trust Evidence Map**
+   - reasoning trace + row-level citations
+   - validator loop metadata (`validation_attempts`, `correction_applied`)
+3. Switch to **Crisis Map** tab:
+   - set `state=Bihar`, `priority=critical`, `min_severity=0.5`
+   - click **Load Desert Regions**
+   - show top-risk PIN panel + map popups
+4. Export planner CSV via top-nav **Export CSV**.
 
 ## Current limitations / next steps
 

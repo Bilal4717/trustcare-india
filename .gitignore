@@ -18,6 +18,7 @@ facility_faiss_index/
 facility_faiss_index_hf/
 facility_faiss_index_gemini/
 mlruns/
+databricks_facility_export.csv
 
 # IDE / OS
 .DS_Store

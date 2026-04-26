@@ -1,4 +1,5 @@
 import csv
+import difflib
 import io
 import os
 
@@ -37,6 +38,57 @@ from healthcare_app.statistics import (
     desert_severity_interval,
     score_confidence_interval,
 )
+from healthcare_app.confidence_metrics import confidence_metrics_report
+
+try:
+    import mlflow
+except Exception:
+    mlflow = None
+
+
+def _active_trace_run_id():
+    if mlflow is None:
+        return None
+    try:
+        run = mlflow.active_run()
+        if run and getattr(run, "info", None):
+            return getattr(run.info, "run_id", None)
+    except Exception:
+        return None
+    return None
+
+
+def _ngo_action_for_missing(missing_specialties):
+    miss = [str(m).lower() for m in (missing_specialties or [])]
+    actions = []
+    if any("oncology" in m for m in miss):
+        actions.append("Partner oncology referral buses + tele-oncology screening camps")
+    if any("dialysis" in m for m in miss):
+        actions.append("Deploy dialysis shuttle/referral network + nephrology outreach days")
+    if any("emergency" in m or "trauma" in m for m in miss):
+        actions.append("Stand up 24x7 emergency transfer protocol with ambulance NGO partners")
+    if any("neonatal" in m or "nicu" in m for m in miss):
+        actions.append("Maternal-neonatal stabilization training and NICU referral hotline")
+    if not actions:
+        actions.append("General specialist referral camps and mobile diagnostics")
+    return actions[:2]
+
+
+def _norm_state_name(s: str) -> str:
+    return " ".join((s or "").strip().lower().replace("-", " ").replace("_", " ").split())
+
+
+def _state_suggestions(all_states, query: str, limit: int = 5):
+    if not query:
+        return []
+    norm_query = _norm_state_name(query)
+    norm_map = {}
+    for st in all_states or []:
+        key = _norm_state_name(str(st))
+        if key and key not in norm_map:
+            norm_map[key] = str(st)
+    matches = difflib.get_close_matches(norm_query, list(norm_map.keys()), n=limit, cutoff=0.45)
+    return [norm_map[m] for m in matches]
 
 
 def _initial_state(user_message: str):
@@ -57,7 +109,10 @@ def _initial_state(user_message: str):
         "confidence_band": None,
         "reason_codes": None,
         "trust_breakdown": None,
+        "trust_evidence_map": None,
         "planner_summary": None,
+        "validation_attempts": 0,
+        "correction_applied": False,
     }
 
 
@@ -224,6 +279,21 @@ def create_app() -> Flask:
         """Dataset quality report with field fill rates and coverage metrics."""
         return jsonify(_quality_report)
 
+    # ── /metrics/confidence ───────────────────────────────────────────────────
+    @app.route("/metrics/confidence", methods=["GET"])
+    def confidence_metrics():
+        """
+        Confidence diagnostics:
+        - proxy empirical coverage vs target
+        - interval width stats
+        - uncertainty decomposition
+        """
+        try:
+            report = confidence_metrics_report(df, _quality_report)
+            return jsonify(report)
+        except Exception as e:
+            return jsonify({"status": "error", "error": f"Confidence metrics failed: {e}"}), 500
+
     # ── /facilities/geojson ───────────────────────────────────────────────────
     @app.route("/facilities/geojson", methods=["GET"])
     def facilities_geojson():
@@ -289,6 +359,7 @@ def create_app() -> Flask:
 
             with traced_step("endpoint_chat", {"message_chars": str(len(user_message))}):
                 result = healthcare_bot.invoke(_initial_state(user_message))
+                trace_run_id = _active_trace_run_id()
 
             # Attach confidence intervals to the response
             cs = result.get("confidence_score") or 0.0
@@ -306,14 +377,18 @@ def create_app() -> Flask:
                     "trust_score": result.get("trust_score"),
                     "trust_flags": result.get("trust_flags"),
                     "trust_breakdown": result.get("trust_breakdown"),
+                    "trust_evidence_map": result.get("trust_evidence_map"),
                     "desert_regions": result.get("desert_regions"),
                     "planner_summary": result.get("planner_summary"),
                     "confidence_score": result.get("confidence_score"),
                     "confidence_band": result.get("confidence_band"),
                     "confidence_interval": ci,
                     "reason_codes": result.get("reason_codes"),
+                    "validation_attempts": result.get("validation_attempts"),
+                    "correction_applied": result.get("correction_applied"),
                     "chain_of_thought": result.get("chain_of_thought", []),
                     "source_citations": result.get("source_citations"),
+                    "trace_run_id": trace_run_id,
                 }
             )
         except Exception as e:
@@ -328,6 +403,7 @@ def create_app() -> Flask:
             if not facility_name:
                 return jsonify({"error": "facility_name is required"}), 400
             out = runtime.audit_agent(_initial_state(f'Audit facility "{facility_name}"'))
+            trace_run_id = _active_trace_run_id()
 
             cs = out.get("confidence_score") or 0.0
             n_docs = len(out.get("retrieved_docs") or [])
@@ -345,9 +421,12 @@ def create_app() -> Flask:
                     "confidence_band": out.get("confidence_band"),
                     "confidence_interval": ci,
                     "reason_codes": out.get("reason_codes"),
+                    "validation_attempts": out.get("validation_attempts"),
+                    "correction_applied": out.get("correction_applied"),
                     "chain_of_thought": out.get("chain_of_thought", []),
                     "response": out["messages"][-1].content,
                     "source_citations": out.get("source_citations"),
+                    "trace_run_id": trace_run_id,
                 }
             )
         except Exception as e:
@@ -433,6 +512,30 @@ def create_app() -> Flask:
 
             out = runtime.desert_finder(_initial_state("map desert analysis"))
             regions = out.get("desert_regions") or []
+            state_filter = (request.args.get("state") or "").strip().lower()
+            priority_filter = (request.args.get("priority") or "").strip().lower()
+            try:
+                min_severity = float(request.args.get("min_severity", "0") or 0.0)
+            except Exception:
+                min_severity = 0.0
+            try:
+                top_n = max(0, int(request.args.get("top_n", "0") or 0))
+            except Exception:
+                top_n = 0
+
+            all_states = sorted({str(r.get("state") or "").strip() for r in regions if str(r.get("state") or "").strip()})
+            if state_filter:
+                sf = _norm_state_name(state_filter)
+                regions = [r for r in regions if sf in _norm_state_name(str(r.get("state", "")))]
+            if priority_filter:
+                regions = [r for r in regions if str(r.get("intervention_priority", "")).lower() == priority_filter]
+            if min_severity > 0:
+                regions = [r for r in regions if float(r.get("severity_index") or 0.0) >= min_severity]
+
+            regions = sorted(regions, key=lambda r: float(r.get("severity_index") or 0.0), reverse=True)
+            if top_n > 0:
+                regions = regions[:top_n]
+
             features = []
             for r in regions:
                 if r.get("lat") is None or r.get("lon") is None:
@@ -458,7 +561,32 @@ def create_app() -> Flask:
                         },
                     }
                 )
-            return jsonify({"type": "FeatureCollection", "features": features})
+            top_risk_pins = [
+                {
+                    "pin": r.get("pin"),
+                    "city": r.get("city"),
+                    "state": r.get("state"),
+                    "priority": r.get("intervention_priority"),
+                    "severity_index": r.get("severity_index"),
+                    "missing_specialties_count": len(r.get("missing_specialties") or []),
+                    "ngo_actions": _ngo_action_for_missing(r.get("missing_specialties") or []),
+                }
+                for r in regions[:20]
+            ]
+            return jsonify(
+                {
+                    "type": "FeatureCollection",
+                    "features": features,
+                    "top_risk_pins": top_risk_pins,
+                    "state_suggestions": _state_suggestions(all_states, state_filter),
+                    "filters_applied": {
+                        "state": state_filter or None,
+                        "priority": priority_filter or None,
+                        "min_severity": min_severity,
+                        "top_n": top_n or None,
+                    },
+                }
+            )
         except Exception as e:
             return jsonify({"error": f"Map generation failed: {e}"}), 500
 

@@ -23,7 +23,10 @@ class HealthcareState(TypedDict):
     confidence_band: Optional[str]
     reason_codes: Optional[List[str]]
     trust_breakdown: Optional[List[dict]]
+    trust_evidence_map: Optional[List[dict]]
     planner_summary: Optional[List[dict]]
+    validation_attempts: Optional[int]
+    correction_applied: Optional[bool]
 
 
 class FacilityCapabilities(BaseModel):
