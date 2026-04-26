@@ -1,9 +1,8 @@
 import json
 import os
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import pandas as pd
-from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 
 from healthcare_app.config import (
@@ -197,7 +196,15 @@ def _build_metadata(idx: int, row: pd.Series) -> dict:
     }
 
 
-def get_vectorstore(df: pd.DataFrame, embedding, vectorstore_path: Optional[str] = None) -> FAISS:
+def get_vectorstore(df: pd.DataFrame, embedding, vectorstore_path: Optional[str] = None) -> Any:
+    try:
+        from langchain_community.vectorstores import FAISS
+    except Exception as exc:
+        raise RuntimeError(
+            "FAISS backend unavailable in this runtime. "
+            "Use a cloud retriever or keyword fallback mode."
+        ) from exc
+
     persist = vectorstore_path or DEFAULT_VECTORSTORE_PATH
     if os.path.exists(persist):
         return FAISS.load_local(persist, embedding, allow_dangerous_deserialization=True)
