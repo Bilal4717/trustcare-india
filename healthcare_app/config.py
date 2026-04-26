@@ -81,6 +81,27 @@ LOCAL_EMBED_MODEL = os.getenv("LOCAL_EMBED_MODEL", "sentence-transformers/all-Mi
 
 CHUNK_BATCH_SIZE = int(os.getenv("CHUNK_BATCH_SIZE", "500"))
 
+
+def _env_bool(name: str, default: str = "false") -> bool:
+    return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
+
+
+# FAISS / Mosaic: how many chunks to pass into the LLM (lower = faster retrieval + shorter prompts).
+try:
+    RETRIEVAL_TOP_K = max(1, min(50, int(os.getenv("RETRIEVAL_TOP_K", "10"))))
+except ValueError:
+    RETRIEVAL_TOP_K = 10
+
+# If true, skip correction_agent → second validator LLM round-trip when the first validation fails.
+# Tradeoff: faster responses; less chance to "repair" wording the validator rejected.
+CHAT_SINGLE_PASS_VALIDATION = _env_bool("CHAT_SINGLE_PASS_VALIDATION", "false")
+
+# Max characters of `answer` sent to the LLM validator (0 = no limit). Shorter = faster/cheaper.
+try:
+    VALIDATOR_ANSWER_MAX_CHARS = max(0, int(os.getenv("VALIDATOR_ANSWER_MAX_CHARS", "6000")))
+except ValueError:
+    VALIDATOR_ANSWER_MAX_CHARS = 6000
+
 MLFLOW_ENABLED = os.getenv("MLFLOW_ENABLED", "true").lower() in {"1", "true", "yes"}
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "")
 MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT", "serving-a-nation")

@@ -229,9 +229,12 @@ def format_docs_for_llm(docs: list) -> str:
     lines = []
     for i, doc in enumerate(docs, start=1):
         m = doc.metadata
+        rid = m.get("facility_id")
+        rid_line = f"    Row ID (dataset index): {rid}\n" if rid is not None else ""
         lines.append(
             f"[{i}] {m.get('name', 'Unknown')} ({m.get('type', '')})\n"
             f"    Location: {m.get('city', '')}, {m.get('state', '')} — PIN {m.get('pin', '')}\n"
+            f"{rid_line}"
             f"    {doc.page_content[:400]}..."
         )
     return "\n\n".join(lines)

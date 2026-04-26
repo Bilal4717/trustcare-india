@@ -1,0 +1,8 @@
+# Install profile for Render (Web Service) and similar Linux PaaS hosts.
+# Includes FAISS (required for local/Gemini vector index) and Gunicorn.
+#
+#   pip install -r requirements.render.txt
+#
+-r requirements.txt
+faiss-cpu>=1.8
+gunicorn>=22.0

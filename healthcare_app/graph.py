@@ -1,5 +1,6 @@
 from langgraph.graph import END, StateGraph
 
+from healthcare_app.config import CHAT_SINGLE_PASS_VALIDATION
 from healthcare_app.schemas import HealthcareState
 
 
@@ -18,10 +19,13 @@ def route_after_validator(state: HealthcareState) -> str:
     """
     Self-correction loop:
     - If valid => finalize
+    - If CHAT_SINGLE_PASS_VALIDATION => finalize (skip correction + second validator)
     - If invalid and attempts remain => correction pass
     - Else => finalize with validator note
     """
     if state.get("validated") is True:
+        return "response_builder"
+    if CHAT_SINGLE_PASS_VALIDATION:
         return "response_builder"
     attempts = int(state.get("validation_attempts") or 0)
     if attempts < 2:

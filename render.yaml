@@ -1,0 +1,22 @@
+# Render Blueprint: Dashboard → New → Blueprint → connect repo (or: `render blueprint launch`).
+# Add secrets in the service → Environment: GEMINI_API_KEY or GOOGLE_API_KEY (required), TAVILY_API_KEY, etc.
+# See .env.example
+#
+# First deploy may be slow: builds FAISS if indexes are not in the repo. Prebuilt indexes are in .gitignore;
+# for smaller RAM use a paid instance or precompute index + commit to a deploy branch (remove from .gitignore).
+
+services:
+  - type: web
+    name: trustcare-india
+    runtime: python
+    # plan: free | starter | standard — omit to use Render default; free tier can OOM on FAISS build
+    buildCommand: pip install -r requirements.render.txt
+    # $PORT is set by Render. Single worker = one in-memory app. 300s allows cold start + index build.
+    startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT --timeout 300 --graceful-timeout 60 main:app
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: MLFLOW_ENABLED
+        value: "false"

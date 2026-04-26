@@ -263,3 +263,196 @@ def dataset_quality_report(df) -> Dict:
             else "Sparse dataset — confidence intervals will be wide; treat conclusions as indicative only"
         ),
     }
+
+
+# ── Unified conclusion uncertainty (registry messiness + intervals) ───────────
+
+
+def _completeness_from_retrieved(retrieved_docs: Optional[List[dict]]) -> List[float]:
+    out: List[float] = []
+    if not retrieved_docs:
+        return out
+    for d in retrieved_docs:
+        if not isinstance(d, dict):
+            continue
+        v = d.get("completeness")
+        try:
+            out.append(float(v))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def effective_completeness_for_inference(
+    retrieved_completeness: List[float],
+    overall_dataset_completeness: Optional[float],
+) -> Tuple[float, Dict[str, Optional[float]]]:
+    """
+    Conservative effective completeness for SE scaling:
+    penalize weak rows (min), average evidence strength (mean), and corpus prior (overall).
+    Lower values => wider confidence intervals in score_confidence_interval().
+    """
+    n = len(retrieved_completeness)
+    if n == 0:
+        oc = float(overall_dataset_completeness) if overall_dataset_completeness is not None else 0.35
+        eff = max(0.06, min(1.0, oc * 0.82))
+        return eff, {
+            "n_retrieved": 0,
+            "mean_completeness": None,
+            "min_completeness": None,
+            "overall_dataset_completeness": round(oc, 4),
+            "effective_completeness": round(eff, 4),
+        }
+
+    mean_c = sum(retrieved_completeness) / n
+    min_c = min(retrieved_completeness)
+    oc = (
+        float(overall_dataset_completeness)
+        if overall_dataset_completeness is not None
+        else mean_c
+    )
+    eff = max(0.06, min(1.0, 0.42 * min_c + 0.38 * mean_c + 0.20 * oc))
+    return eff, {
+        "n_retrieved": n,
+        "mean_completeness": round(mean_c, 4),
+        "min_completeness": round(min_c, 4),
+        "overall_dataset_completeness": round(float(oc), 4),
+        "effective_completeness": round(eff, 4),
+    }
+
+
+def _bootstrap_mean_ci(
+    values: List[float],
+    *,
+    n_bootstrap: int = 400,
+    confidence: float = 0.95,
+    seed: int = 101,
+) -> Optional[Dict[str, float]]:
+    """Bootstrap CI for the mean of per-record completeness in the retrieval set."""
+    if len(values) < 2:
+        return None
+    rng = random.Random(seed)
+    n = len(values)
+    means: List[float] = []
+    for _ in range(n_bootstrap):
+        sample = [rng.choice(values) for _ in range(n)]
+        means.append(sum(sample) / n)
+    means.sort()
+    alpha = 1.0 - confidence
+    lo_idx = int(math.floor(alpha / 2 * n_bootstrap))
+    hi_idx = int(math.ceil((1 - alpha / 2) * n_bootstrap)) - 1
+    lo_idx = max(0, min(lo_idx, n_bootstrap - 1))
+    hi_idx = max(0, min(hi_idx, n_bootstrap - 1))
+    point = sum(values) / n
+    return {
+        "estimate": round(point, 4),
+        "lower": round(means[lo_idx], 4),
+        "upper": round(means[hi_idx], 4),
+        "confidence": confidence,
+        "method": "bootstrap_mean_of_retrieved_completeness",
+    }
+
+
+def _uncertainty_framing_paragraph(
+    ci: Dict[str, float],
+    rq: Dict[str, Optional[float]],
+    comp_boot: Optional[Dict[str, float]],
+    *,
+    intent: str,
+) -> str:
+    """Plain-language disclosure for end users and evaluators."""
+    lo, hi = ci.get("lower", 0.0), ci.get("upper", 0.0)
+    est = ci.get("estimate", 0.0)
+    width = ci.get("width", 0.0)
+    n_r = int(rq.get("n_retrieved") or 0)
+    eff = rq.get("effective_completeness")
+
+    lines = [
+        "This assistant reasons over an incomplete facility registry: fields may be missing, stale, or wrong, "
+        "so conclusions describe what the data shows, not guaranteed real-world availability.",
+        f"For this {intent} response, the model confidence score {est} is accompanied by an approximate "
+        f"{int(ci.get('confidence', 0.95) * 100)}% interval [{lo}, {hi}] (width {width}), "
+        "computed from record completeness and retrieval breadth using a parametric margin "
+        "(uncertainty grows when records are sparse or few facilities inform the answer).",
+    ]
+    if n_r > 0:
+        if rq.get("note") == "completeness_field_missing_on_retrieved_rows":
+            lines.append(
+                f"Retrieval set: {n_r} facility row(s), but per-row completeness scores were missing — "
+                f"interval width leans on the corpus-level prior (effective completeness for inference ≈ {eff})."
+            )
+        else:
+            lines.append(
+                f"Retrieval set: {n_r} facility row(s); mean record completeness ≈ {rq.get('mean_completeness')}, "
+                f"weakest row ≈ {rq.get('min_completeness')} (effective completeness for inference ≈ {eff})."
+            )
+    else:
+        lines.append(
+            f"No per-facility retrieval vector for this path; corpus-level completeness prior ≈ "
+            f"{rq.get('overall_dataset_completeness')} was used to widen intervals."
+        )
+    if comp_boot:
+        lines.append(
+            f"Bootstrap ({comp_boot.get('confidence', 0.95):.0%}) interval for mean completeness in this retrieval "
+            f"window: [{comp_boot.get('lower')}, {comp_boot.get('upper')}]. "
+            "If that interval is wide, treat ranked answers as exploratory."
+        )
+    lines.append("For clinical or operational decisions, verify against primary sources and local authorities.")
+    return " ".join(lines)
+
+
+def conclusion_uncertainty_bundle(
+    point_estimate: float,
+    retrieved_docs: Optional[List[dict]],
+    *,
+    overall_dataset_completeness: Optional[float] = None,
+    evidence_n_docs: Optional[int] = None,
+    intent: str = "query",
+    confidence: float = 0.95,
+) -> Dict:
+    """
+    Attach statistics-based uncertainty to a single scalar confidence output.
+
+    - Parametric CI on the point estimate via score_confidence_interval (completeness + n_docs).
+    - Optional bootstrap on mean completeness across retrieved rows (non-parametric stability).
+    - User-facing framing paragraph for responsible disclosure.
+    """
+    comps = _completeness_from_retrieved(retrieved_docs)
+    n_rows = len(retrieved_docs or [])
+    if comps:
+        eff, rq_stats = effective_completeness_for_inference(comps, overall_dataset_completeness)
+        n_docs = len(comps)
+    elif n_rows > 0:
+        # Rows returned but no completeness field — treat as extra sampling uncertainty
+        eff, rq_stats = effective_completeness_for_inference([], overall_dataset_completeness)
+        eff = max(0.06, eff * 0.88)
+        rq_stats = {
+            **rq_stats,
+            "n_retrieved": n_rows,
+            "mean_completeness": rq_stats.get("mean_completeness"),
+            "min_completeness": rq_stats.get("min_completeness"),
+            "effective_completeness": round(eff, 4),
+            "note": "completeness_field_missing_on_retrieved_rows",
+        }
+        n_docs = n_rows
+    else:
+        eff, rq_stats = effective_completeness_for_inference([], overall_dataset_completeness)
+        n_docs = max(1, int(evidence_n_docs or 1))
+
+    pe = max(0.0, min(1.0, float(point_estimate)))
+    ci = score_confidence_interval(pe, eff, n_docs, confidence=confidence)
+    comp_boot = _bootstrap_mean_ci(comps, confidence=confidence) if len(comps) >= 2 else None
+
+    framing = _uncertainty_framing_paragraph(ci, rq_stats, comp_boot, intent=intent)
+
+    return {
+        "confidence_interval": ci,
+        "retrieval_quality": rq_stats,
+        "completeness_bootstrap": comp_boot,
+        "uncertainty_framing": framing,
+        "methodology": [
+            "Parametric CI: score_confidence_interval(estimate, effective_completeness, n_docs)",
+            "effective_completeness blends min/mean retrieved completeness with dataset-wide prior",
+            "Optional bootstrap on per-row completeness in the retrieval window",
+        ],
+    }

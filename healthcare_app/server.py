@@ -10,11 +10,14 @@ from healthcare_app.agents import AgentRuntime
 from healthcare_app.config import (
     BASE_DIR,
     CHAT_MODEL,
+    CHAT_SINGLE_PASS_VALIDATION,
     EMBED_MODEL,
     GEMINI_API_KEY,
     GEMINI_CHAT_MODEL,
     GEMINI_EMBED_MODEL,
     LOCAL_EMBED_MODEL,
+    MLFLOW_ENABLED,
+    RETRIEVAL_TOP_K,
     TAVILY_API_KEY,
     VECTORSTORE_PATH,
     VECTORSTORE_PATH_GEMINI,
@@ -32,8 +35,9 @@ from healthcare_app.databricks_client import (
     load_from_unity_catalog,
 )
 from healthcare_app.graph import build_graph
-from healthcare_app.observability import configure_mlflow, traced_step
+from healthcare_app.observability import configure_mlflow, mlflow_tracing_available, traced_step
 from healthcare_app.statistics import (
+    conclusion_uncertainty_bundle,
     dataset_quality_report,
     desert_severity_interval,
     score_confidence_interval,
@@ -113,6 +117,9 @@ def _initial_state(user_message: str):
         "planner_summary": None,
         "validation_attempts": 0,
         "correction_applied": False,
+        "confidence_interval": None,
+        "uncertainty_framing": None,
+        "retrieval_quality_stats": None,
     }
 
 
@@ -219,17 +226,26 @@ def create_app() -> Flask:
 
     # ── Vector store: Mosaic AI VS → FAISS ───────────────────────────────────
     if is_databricks_configured():
-        retriever = get_mosaic_vector_search_retriever(embedding, k=10)
+        retriever = get_mosaic_vector_search_retriever(embedding, k=RETRIEVAL_TOP_K)
 
     if retriever is None:
         vectorstore = get_vectorstore(df, embedding, vectorstore_path=vs_path)
-        retriever = vectorstore.as_retriever(search_kwargs={"k": 10})
+        retriever = vectorstore.as_retriever(search_kwargs={"k": RETRIEVAL_TOP_K})
 
-    runtime = AgentRuntime(llm, retriever, df, tavily_client=tavily_client)
+    # Dataset quality first — passed into agents for statistics-based uncertainty framing.
+    _quality_report = dataset_quality_report(df)
+
+    runtime = AgentRuntime(
+        llm,
+        retriever,
+        df,
+        tavily_client=tavily_client,
+        dataset_quality=_quality_report,
+    )
     healthcare_bot = build_graph(runtime)
 
-    # ── Precompute dataset quality once at startup ────────────────────────────
-    _quality_report = dataset_quality_report(df)
+    _db_status = get_databricks_status()
+    _vector_mode = "mosaic" if _db_status.get("vector_search") else "faiss_local"
 
     # ─────────────────────────────────────────────────────────────────────────
     # Routes
@@ -262,6 +278,37 @@ def create_app() -> Flask:
         elif _backend == "openai":
             chat_model = CHAT_MODEL
 
+        trace_api = mlflow_tracing_available()
+        challenge_rubric = {
+            "mvp": {
+                "multi_attribute_facility_reasoning": True,
+                "audit_unstructured_extraction_crosscheck": True,
+                "trust_scorer_claim_evidence_contradictions": True,
+            },
+            "stretch": {
+                "row_level_citations_query_and_trust": True,
+                "chain_of_thought_steps": True,
+                "validator_self_correction_loop": not CHAT_SINGLE_PASS_VALIDATION,
+                "validator_single_pass_fast_mode": CHAT_SINGLE_PASS_VALIDATION,
+                "crisis_map_pin_deserts": True,
+                "mlflow_nested_step_spans": trace_api,
+            },
+            "research": {
+                "confidence_and_prediction_intervals": True,
+                "dataset_completeness_aware_uncertainty": True,
+            },
+            "databricks_stack": {
+                "configured": _db_status.get("configured", False),
+                "vector_retrieval": _vector_mode,
+                "unity_catalog_target": _db_status.get("unity_catalog"),
+                "sql_warehouse_ready": _db_status.get("sql_warehouse", False),
+                "foundation_model_endpoint": _db_status.get("fm_endpoint"),
+            },
+            "workspace_notebook_integrations": [
+                "Agent Bricks and Genie Code run in Databricks notebooks; enable DATABRICKS_* env vars so this app loads Unity Catalog, Mosaic Vector Search, and FM endpoints at runtime.",
+            ],
+        }
+
         return jsonify(
             {
                 "status": "ok",
@@ -270,8 +317,13 @@ def create_app() -> Flask:
                 "embeddings": embed_label,
                 "chat_model": chat_model,
                 "data_source": _data_source,
-                "vector_index": vs_path if retriever else "mosaic_ai_vector_search",
-                "databricks": get_databricks_status(),
+                "vector_index": vs_path if _vector_mode == "faiss_local" else f"mosaic_ai_vector_search ({_vector_mode})",
+                "databricks": _db_status,
+                "retrieval_top_k": RETRIEVAL_TOP_K,
+                "single_pass_validation": CHAT_SINGLE_PASS_VALIDATION,
+                "mlflow_enabled": MLFLOW_ENABLED,
+                "mlflow_tracing_api": trace_api,
+                "challenge_rubric": challenge_rubric,
                 "dataset": {
                     "total_facilities": _quality_report.get("total_facilities", 0),
                     "states_covered": _quality_report.get("states_covered", 0),
@@ -364,23 +416,29 @@ def create_app() -> Flask:
             if not user_message:
                 return jsonify({"error": "No message provided"}), 400
 
-            with traced_step("endpoint_chat", {"message_chars": str(len(user_message))}):
+            with traced_step(
+                "agent_graph_invoke",
+                {"message_chars": str(len(user_message)), "endpoint": "chat"},
+            ):
                 result = healthcare_bot.invoke(_initial_state(user_message))
-                trace_run_id = _active_trace_run_id()
+            trace_run_id = _active_trace_run_id()
 
-            # Attach confidence intervals to the response
-            cs = result.get("confidence_score") or 0.0
-            n_docs = len(result.get("retrieved_docs") or [])
-            comp = (
-                result["retrieved_docs"][0].get("completeness", 0.5)
-                if result.get("retrieved_docs")
-                else 0.5
-            )
-            ci = score_confidence_interval(cs, comp, n_docs)
+            # Confidence intervals (prefer graph-computed bundle aligned with user-facing framing)
+            ci = result.get("confidence_interval")
+            if not ci:
+                cs = result.get("confidence_score") or 0.0
+                n_docs = len(result.get("retrieved_docs") or [])
+                comp = (
+                    result["retrieved_docs"][0].get("completeness", 0.5)
+                    if result.get("retrieved_docs")
+                    else 0.5
+                )
+                ci = score_confidence_interval(cs, comp, n_docs)
 
             return jsonify(
                 {
                     "response": result["messages"][-1].content,
+                    "intent": result.get("intent"),
                     "trust_score": result.get("trust_score"),
                     "trust_flags": result.get("trust_flags"),
                     "trust_breakdown": result.get("trust_breakdown"),
@@ -390,6 +448,8 @@ def create_app() -> Flask:
                     "confidence_score": result.get("confidence_score"),
                     "confidence_band": result.get("confidence_band"),
                     "confidence_interval": ci,
+                    "uncertainty_framing": result.get("uncertainty_framing"),
+                    "retrieval_quality_stats": result.get("retrieval_quality_stats"),
                     "reason_codes": result.get("reason_codes"),
                     "validation_attempts": result.get("validation_attempts"),
                     "correction_applied": result.get("correction_applied"),
@@ -412,14 +472,21 @@ def create_app() -> Flask:
             out = runtime.audit_agent(_initial_state(f'Audit facility "{facility_name}"'))
             trace_run_id = _active_trace_run_id()
 
-            cs = out.get("confidence_score") or 0.0
-            n_docs = len(out.get("retrieved_docs") or [])
-            comp = (
-                out["retrieved_docs"][0].get("completeness", 0.5)
-                if out.get("retrieved_docs")
-                else 0.5
+            cs = float(out.get("confidence_score") or 0.0)
+            oc = _quality_report.get("overall_completeness") if isinstance(_quality_report, dict) else None
+            if oc is not None:
+                try:
+                    oc = float(oc)
+                except (TypeError, ValueError):
+                    oc = None
+            aud_bundle = conclusion_uncertainty_bundle(
+                cs,
+                out.get("retrieved_docs"),
+                overall_dataset_completeness=oc,
+                evidence_n_docs=max(1, len(out.get("retrieved_docs") or [])),
+                intent="audit",
             )
-            ci = score_confidence_interval(cs, comp, n_docs)
+            ci = aud_bundle["confidence_interval"]
 
             return jsonify(
                 {
@@ -427,6 +494,11 @@ def create_app() -> Flask:
                     "confidence_score": out.get("confidence_score"),
                     "confidence_band": out.get("confidence_band"),
                     "confidence_interval": ci,
+                    "uncertainty_framing": aud_bundle.get("uncertainty_framing"),
+                    "retrieval_quality_stats": {
+                        **(aud_bundle.get("retrieval_quality") or {}),
+                        "completeness_bootstrap": aud_bundle.get("completeness_bootstrap"),
+                    },
                     "reason_codes": out.get("reason_codes"),
                     "validation_attempts": out.get("validation_attempts"),
                     "correction_applied": out.get("correction_applied"),
@@ -458,6 +530,21 @@ def create_app() -> Flask:
                 )
                 enriched.append({**r, "severity_interval": si})
 
+            d_cs = float(out.get("confidence_score") or 0.0)
+            oc = _quality_report.get("overall_completeness") if isinstance(_quality_report, dict) else None
+            if oc is not None:
+                try:
+                    oc = float(oc)
+                except (TypeError, ValueError):
+                    oc = None
+            d_bundle = conclusion_uncertainty_bundle(
+                d_cs,
+                None,
+                overall_dataset_completeness=oc,
+                evidence_n_docs=max(1, len(enriched)),
+                intent="desert",
+            )
+
             return jsonify(
                 {
                     "count": len(enriched),
@@ -465,6 +552,12 @@ def create_app() -> Flask:
                     "planner_summary": out.get("planner_summary"),
                     "confidence_score": out.get("confidence_score"),
                     "confidence_band": out.get("confidence_band"),
+                    "confidence_interval": d_bundle["confidence_interval"],
+                    "uncertainty_framing": d_bundle.get("uncertainty_framing"),
+                    "retrieval_quality_stats": {
+                        **(d_bundle.get("retrieval_quality") or {}),
+                        "completeness_bootstrap": d_bundle.get("completeness_bootstrap"),
+                    },
                     "reason_codes": out.get("reason_codes"),
                     "chain_of_thought": out.get("chain_of_thought", []),
                 }

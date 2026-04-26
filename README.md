@@ -103,6 +103,24 @@ Open:
 - `http://127.0.0.1:5001/` - UI
 - `http://127.0.0.1:5001/health` - runtime/provider status
 
+## Deploy on Render (Web Service)
+
+1. **Push** this repo to GitHub (include `VF_Hackathon_Dataset_India_Large.xlsx` if you rely on the default `DATASET_PATH`).
+
+2. In [Render](https://dashboard.render.com): **New** → **Blueprint** (or **Web Service** if you prefer manual setup).
+
+3. **Blueprint path:** `render.yaml` (already in the repo). Approve the service.
+
+4. **Environment variables** (service → *Environment*): add at least **`GEMINI_API_KEY`** or **`GOOGLE_API_KEY`**. Mark them **Secret**. Optional: `TAVILY_API_KEY`, `LLM_PROVIDER`, `GEMINI_CHAT_MODEL`, `GEMINI_EMBED_MODEL`, `CHAT_SINGLE_PASS_VALIDATION`, etc. (see `.env.example`).
+
+5. **Build / start** are defined in `render.yaml`: installs `requirements.render.txt` (app deps + `faiss-cpu` + `gunicorn`), starts Gunicorn on **`$PORT`**.
+
+6. **Health check:** `GET /health` — if deploys fail, increase instance type (free tier can run out of RAM while building the FAISS index) or pre-build `facility_faiss_index_*` and ship it (may require `git` tracking or an external object store + code change).
+
+7. **Smoke test:** open the Render URL with paths `/`, `/app`, and `/health`.
+
+*Manual Web Service (no Blueprint):* Runtime **Python 3.12**, build `pip install -r requirements.render.txt`, start `gunicorn -w 1 -b 0.0.0.0:$PORT --timeout 300 main:app`, add the same env vars.
+
 ## API endpoints
 
 - `POST /chat`

@@ -8,7 +8,8 @@ from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from healthcare_app.citations import evidence_snippet
-from healthcare_app.config import HIGH_ACUITY_SPECIALTIES, TRUST_RULES
+from healthcare_app.config import HIGH_ACUITY_SPECIALTIES, TRUST_RULES, VALIDATOR_ANSWER_MAX_CHARS
+from healthcare_app.statistics import conclusion_uncertainty_bundle
 from healthcare_app.data import _build_metadata, _parse_json_list, build_facility_text, format_docs_for_llm
 from healthcare_app.heuristics import (
     detect_intent_heuristic,
@@ -40,11 +41,13 @@ class AgentRuntime:
         df: pd.DataFrame,
         *,
         tavily_client: Optional[Any] = None,
+        dataset_quality: Optional[dict] = None,
     ):
         self.llm = llm
         self.retriever = retriever
         self.df = df
         self.tavily_client = tavily_client
+        self.dataset_quality = dataset_quality or {}
         self._state_terms = {
             str(s).strip().lower() for s in (df.get("address_stateOrRegion", pd.Series(dtype=str)).dropna().unique()) if str(s).strip()
         }
@@ -221,7 +224,8 @@ class AgentRuntime:
     @staticmethod
     def _trust_doc_evaluation(doc) -> dict:
         m = doc.metadata or {}
-        text = (doc.page_content or "").lower()
+        raw_text = doc.page_content or ""
+        text = raw_text.lower()
         claims = _parse_json_list(m.get("capability", "")) + _parse_json_list(m.get("specialties", ""))
         claims_text = " | ".join(claims).lower()
         evidence_text = " | ".join([text, str(m.get("equipment", "")).lower(), str(m.get("procedures", "")).lower()])
@@ -230,6 +234,7 @@ class AgentRuntime:
         score = 1.0
         breakdown = []
         evidence_map = []
+        row_id = m.get("facility_id")
         for claim_name, required_terms in TRUST_RULES.items():
             ck = claim_name.lower()
             if ck.replace(" ", "") in claims_text.replace(" ", "") or ck in claims_text:
@@ -242,24 +247,59 @@ class AgentRuntime:
                         {
                             "flag": f"{claim_name}: missing evidence",
                             "penalty": 0.12,
-                            "evidence_sentence": AgentRuntime._find_evidence_sentence(text, required_terms),
+                            "evidence_sentence": AgentRuntime._find_evidence_sentence(raw_text, required_terms),
                             "source_field": "page_content",
-                            "source_row_id": m.get("facility_id"),
+                            "source_row_id": row_id,
                         }
                     )
         if not m.get("affiliated_staff", False):
-            flags.append("No affiliated staff profile signal.")
+            fl = "No affiliated staff profile signal."
+            flags.append(fl)
             score -= 0.05
             breakdown.append({"type": "profile_signal", "claim": "affiliated_staff_presence", "penalty": 0.05})
+            evidence_map.append(
+                {
+                    "flag": fl,
+                    "penalty": 0.05,
+                    "evidence_sentence": AgentRuntime._find_evidence_sentence(
+                        raw_text, ["staff", "affiliated", "doctor", "physician"]
+                    ),
+                    "source_field": "affiliated_staff_presence",
+                    "source_row_id": row_id,
+                }
+            )
         if not m.get("custom_logo", False):
-            flags.append("No custom branding signal.")
+            fl = "No custom branding signal."
+            flags.append(fl)
             score -= 0.03
             breakdown.append({"type": "profile_signal", "claim": "custom_logo_presence", "penalty": 0.03})
+            evidence_map.append(
+                {
+                    "flag": fl,
+                    "penalty": 0.03,
+                    "evidence_sentence": AgentRuntime._find_evidence_sentence(raw_text, ["logo", "brand", "hospital"]),
+                    "source_field": "custom_logo_presence",
+                    "source_row_id": row_id,
+                }
+            )
         followers = float(m.get("followers") or 0)
         if followers < 50:
-            flags.append("Very low social proof (followers < 50).")
+            fl = "Very low social proof (followers < 50)."
+            flags.append(fl)
             score -= 0.05
             breakdown.append({"type": "social_signal", "claim": "followers_lt_50", "penalty": 0.05})
+            evidence_map.append(
+                {
+                    "flag": fl,
+                    "penalty": 0.05,
+                    "evidence_sentence": (
+                        AgentRuntime._find_evidence_sentence(raw_text, ["follower", "community", "patient"])
+                        or (raw_text[:280].strip() + ("…" if len(raw_text) > 280 else ""))
+                    ),
+                    "source_field": "engagement_metrics_n_followers",
+                    "source_row_id": row_id,
+                }
+            )
 
         high_severity = AgentRuntime._high_severity_contradictions(claims_text, evidence_text, text)
         for contradiction in high_severity:
@@ -277,9 +317,9 @@ class AgentRuntime:
                 {
                     "flag": f"HIGH_SEVERITY: {contradiction}",
                     "penalty": 0.2,
-                    "evidence_sentence": AgentRuntime._find_evidence_sentence(text, contradiction.split()),
+                    "evidence_sentence": AgentRuntime._find_evidence_sentence(raw_text, contradiction.split()),
                     "source_field": "page_content",
-                    "source_row_id": m.get("facility_id"),
+                    "source_row_id": row_id,
                 }
             )
         return {
@@ -477,6 +517,7 @@ class AgentRuntime:
                     "pin": d.metadata.get("pin", ""),
                     "city": d.metadata.get("city", ""),
                     "state": d.metadata.get("state", ""),
+                    "source_row_id": d.metadata.get("facility_id"),
                     "evidence_snippet": evidence_snippet(d.page_content),
                     "completeness": d.metadata.get("completeness"),
                 }
@@ -510,6 +551,8 @@ class AgentRuntime:
             if self.llm is not None:
                 prompt = (
                     "You are an expert healthcare facility analyst for India.\n"
+                    "The registry is incomplete and may contain errors: frame conclusions as conditional on retrieved "
+                    "fields only; never invent facility capabilities not supported by the excerpts.\n"
                     "Given the user query and retrieved facility records, answer with multi-attribute reasoning "
                     "(combine location, specialties, equipment, staffing signals, and unstructured description).\n"
                     "Include 2–5 ranked matches when possible.\n"
@@ -800,6 +843,24 @@ class AgentRuntime:
                     "Flags list claim–evidence gaps from TRUST_RULES and profile heuristics."
                 )
 
+            mapped_flags = {str(e.get("flag") or "") for e in evidence_map}
+            for fl in merged_flags:
+                if fl in mapped_flags:
+                    continue
+                evidence_map.append(
+                    {
+                        "flag": fl,
+                        "penalty": None,
+                        "evidence_sentence": AgentRuntime._find_evidence_sentence(
+                            top_doc.page_content or "", str(fl).replace(":", " ").split()[:8]
+                        ),
+                        "source_field": "page_content",
+                        "source_row_id": m.get("facility_id"),
+                        "source": "merged_llm_flag",
+                    }
+                )
+                mapped_flags.add(fl)
+
             state["trust_score"] = round(final_score, 3)
             state["trust_flags"] = merged_flags
             state["trust_breakdown"] = breakdown
@@ -956,6 +1017,12 @@ class AgentRuntime:
                     "confidence_band": state.get("confidence_band"),
                     "reason_codes": state.get("reason_codes"),
                 }
+                if VALIDATOR_ANSWER_MAX_CHARS > 0:
+                    ans = payload.get("answer")
+                    if isinstance(ans, str) and len(ans) > VALIDATOR_ANSWER_MAX_CHARS:
+                        payload["answer"] = (
+                            ans[:VALIDATOR_ANSWER_MAX_CHARS] + "\n...[truncated for validator]"
+                        )
                 verdict = self.llm.invoke(
                     [
                         SystemMessage(
@@ -1054,6 +1121,35 @@ class AgentRuntime:
         else:
             return state
 
+        cs = state.get("confidence_score")
+        if cs is not None:
+            overall = self.dataset_quality.get("overall_completeness")
+            if overall is not None:
+                try:
+                    overall = float(overall)
+                except (TypeError, ValueError):
+                    overall = None
+            n_ret = len(state.get("retrieved_docs") or [])
+            evidence_n = None
+            if intent == "desert":
+                evidence_n = max(1, len(state.get("desert_regions") or []))
+            elif n_ret == 0:
+                evidence_n = 1
+            bundle = conclusion_uncertainty_bundle(
+                float(cs),
+                state.get("retrieved_docs"),
+                overall_dataset_completeness=overall,
+                evidence_n_docs=evidence_n,
+                intent=str(intent or "query"),
+            )
+            state["confidence_interval"] = bundle["confidence_interval"]
+            rq = bundle.get("retrieval_quality") or {}
+            state["retrieval_quality_stats"] = {
+                **rq,
+                "completeness_bootstrap": bundle.get("completeness_bootstrap"),
+            }
+            state["uncertainty_framing"] = bundle["uncertainty_framing"]
+
         if state.get("validated") is False and state.get("correction_notes"):
             base += f"\n\nValidator note: {state['correction_notes']}"
         if state.get("validation_attempts") is not None:
@@ -1061,7 +1157,18 @@ class AgentRuntime:
         if state.get("correction_applied"):
             base += "\nCorrection applied: yes"
         if state.get("confidence_score") is not None:
-            base += f"\n\nConfidence: {state.get('confidence_score')} ({state.get('confidence_band', 'unknown')})"
+            ci = state.get("confidence_interval") or {}
+            if ci.get("lower") is not None and ci.get("upper") is not None:
+                base += (
+                    f"\n\nConfidence: {state.get('confidence_score')} "
+                    f"({state.get('confidence_band', 'unknown')}); "
+                    f"approx. {int(ci.get('confidence', 0.95) * 100)}% data-adjusted interval "
+                    f"[{ci.get('lower')}, {ci.get('upper')}] (width {ci.get('width')})"
+                )
+            else:
+                base += f"\n\nConfidence: {state.get('confidence_score')} ({state.get('confidence_band', 'unknown')})"
+        if state.get("uncertainty_framing"):
+            base += f"\n\n--- Uncertainty and data limits ---\n{state['uncertainty_framing']}"
         if state.get("reason_codes"):
             base += f"\nReason codes: {', '.join(state.get('reason_codes') or [])}"
         trust_evidence = state.get("trust_evidence_map") or []
