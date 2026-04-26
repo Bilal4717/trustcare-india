@@ -1,91 +1,371 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Serving a Nation - Onboarding</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>TrustCare India — Quick Start Guide</title>
   <style>
-    :root{
-      --bg:#0a1120;--bg2:#0f1b34;--panel:#111d37;--text:#eaf1ff;--muted:#9eb1d8;
-      --accent:#5d9bff;--border:#2b4169;
+    :root {
+      --bg:#07090f; --bg2:#0d1426; --panel:#111827; --panel2:#151e30;
+      --text:#f0f4ff; --muted:#8b9fc7; --accent:#3b82f6; --a2:#60a5fa;
+      --green:#22c55e; --orange:#f59e0b; --red:#ef4444; --border:#1e2d4a; --border2:#253350;
     }
-    *{box-sizing:border-box}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{
-      margin:0;color:var(--text);font-family:Inter,Segoe UI,system-ui,sans-serif;
-      background:linear-gradient(180deg,var(--bg),var(--bg2));
+      font-family:Inter,"Segoe UI",system-ui,sans-serif;
+      background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);
+      color:var(--text); min-height:100vh; padding:0;
     }
-    .wrap{max-width:840px;margin:0 auto;padding:24px 16px 40px}
-    .panel{border:1px solid var(--border);background:var(--panel);border-radius:14px;padding:16px}
-    h1{margin:0 0 4px;font-size:1.4rem}
-    p{margin:0;color:var(--muted);line-height:1.5}
-    .step{display:none;margin-top:12px}
-    .step.active{display:block}
-    .step h3{margin:0 0 6px}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-    button,a.btn{
-      border:1px solid var(--border);background:#152746;color:var(--text);
-      border-radius:9px;padding:9px 12px;text-decoration:none;font:inherit;cursor:pointer
+
+    /* nav */
+    nav{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 24px; border-bottom:1px solid var(--border);
+      background:rgba(7,9,15,.85); backdrop-filter:blur(10px);
+      position:sticky;top:0;z-index:50;
     }
-    button.primary{background:linear-gradient(180deg,#73b0ff,var(--accent));color:#08152b;font-weight:700;border-color:#4a7fd4}
-    .progress{display:flex;gap:6px;margin-top:10px}
-    .dot{width:8px;height:8px;border-radius:50%;background:#3a5485}
-    .dot.active{background:#8ac0ff}
+    .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.95rem;text-decoration:none;color:var(--text)}
+    .logo-dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#60a5fa);box-shadow:0 0 0 5px rgba(59,130,246,.18)}
+    .nav-btns{display:flex;gap:8px}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;text-decoration:none;font-size:.84rem;font-weight:500;transition:all .15s;cursor:pointer;border:1px solid var(--border);background:var(--panel);color:var(--muted)}
+    .btn:hover{color:var(--text);border-color:var(--border2)}
+    .btn-primary{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;font-weight:700;border-color:#2563eb}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(59,130,246,.35)}
+
+    /* layout */
+    .wrap{max-width:820px;margin:0 auto;padding:40px 20px 60px}
+    .page-header{text-align:center;margin-bottom:40px}
+    .page-header h1{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:10px}
+    .page-header p{color:var(--muted);max-width:520px;margin:0 auto;line-height:1.6}
+
+    /* step progress bar */
+    .progress-bar{display:flex;align-items:center;gap:0;margin-bottom:36px}
+    .pb-step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+    .pb-step:not(:last-child)::after{content:"";position:absolute;top:14px;left:50%;width:100%;height:2px;background:var(--border);z-index:0}
+    .pb-step.done::after{background:var(--accent)}
+    .pb-circle{
+      width:28px;height:28px;border-radius:50%;border:2px solid var(--border);
+      background:var(--panel);display:flex;align-items:center;justify-content:center;
+      font-size:.75rem;font-weight:700;color:var(--muted);position:relative;z-index:1;
+      transition:all .3s;
+    }
+    .pb-step.active .pb-circle{border-color:var(--accent);background:rgba(59,130,246,.15);color:var(--a2)}
+    .pb-step.done  .pb-circle{border-color:var(--accent);background:var(--accent);color:#fff}
+    .pb-label{font-size:.7rem;color:var(--muted);margin-top:5px;text-align:center;white-space:nowrap}
+    .pb-step.active .pb-label{color:var(--text)}
+
+    /* step card */
+    .step-card{
+      border:1px solid var(--border);border-radius:18px;
+      background:linear-gradient(160deg,var(--panel),var(--panel2));
+      padding:28px;margin-bottom:16px;display:none;
+      animation:fadeIn .3s ease;
+    }
+    .step-card.active{display:block}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+    .step-num{font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+    .step-card h2{font-size:1.25rem;margin-bottom:10px;line-height:1.2}
+    .step-card>p{color:var(--muted);line-height:1.65;margin-bottom:20px}
+
+    /* example query box */
+    .example-box{
+      background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);
+      border-radius:12px;padding:14px 16px;font-size:.87rem;color:#c0d4f5;
+      font-family:ui-monospace,Menlo,monospace;line-height:1.6;margin-bottom:16px;
+    }
+    .example-box b{color:var(--a2)}
+
+    /* feature highlights */
+    .highlights{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+    .hl{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:12px}
+    .hl-icon{font-size:1.2rem;margin-bottom:6px}
+    .hl h4{font-size:.85rem;margin-bottom:4px}
+    .hl p{font-size:.78rem;color:var(--muted);line-height:1.5}
+
+    /* trust score demo */
+    .trust-demo{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+    .trust-chip{flex:1;min-width:120px;border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;background:rgba(255,255,255,.02)}
+    .trust-chip .score{font-size:1.5rem;font-weight:800;line-height:1}
+    .trust-chip .label{font-size:.72rem;color:var(--muted);margin-top:4px}
+    .trust-chip .note{font-size:.7rem;margin-top:6px;color:var(--muted)}
+
+    /* map preview */
+    .map-preview{
+      background:linear-gradient(135deg,#0f1c35,#111827);
+      border:1px solid var(--border);border-radius:12px;padding:16px;
+      margin-top:16px;position:relative;overflow:hidden;min-height:160px;
+    }
+    .map-dots{position:absolute;inset:0}
+
+    /* controls */
+    .controls{display:flex;justify-content:space-between;align-items:center;margin-top:24px;flex-wrap:wrap;gap:10px}
+    .controls-right{display:flex;gap:8px}
+
+    /* tech badges */
+    .tech-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+    .tech-badge{
+      display:inline-flex;align-items:center;gap:6px;padding:7px 12px;
+      background:rgba(255,255,255,.04);border:1px solid var(--border);
+      border-radius:8px;font-size:.78rem;color:var(--muted);
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="panel">
-      <h1>Onboarding</h1>
-      <p>3 quick steps before you start.</p>
 
-      <section class="step active">
-        <h3>Step 1: Ask complex care questions</h3>
-        <p>Example: "Find nearest emergency appendectomy support in rural Bihar with part-time staffing signals."</p>
-      </section>
+<nav>
+  <a class="logo" href="/">
+    <span class="logo-dot"></span>TrustCare India
+  </a>
+  <div class="nav-btns">
+    <a class="btn" href="/">← Home</a>
+    <a class="btn btn-primary" href="/app">Skip to App →</a>
+  </div>
+</nav>
 
-      <section class="step">
-        <h3>Step 2: Verify before trusting</h3>
-        <p>Review trust score, contradiction flags, chain-of-thought, and row-level evidence snippets.</p>
-      </section>
+<div class="wrap">
+  <div class="page-header">
+    <div style="font-size:.78rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);margin-bottom:8px">Quick Start Guide</div>
+    <h1>Get up to speed in 4 steps</h1>
+    <p>TrustCare India helps families, NGOs, and planners navigate India's healthcare landscape using AI-powered multi-attribute reasoning.</p>
+  </div>
 
-      <section class="step">
-        <h3>Step 3: Use desert insights for planning</h3>
-        <p>Load crisis mapping data to identify regions missing oncology, dialysis, emergency trauma, and more.</p>
-      </section>
+  <!-- Progress bar -->
+  <div class="progress-bar" id="progress-bar">
+    <div class="pb-step active" data-i="0"><div class="pb-circle">1</div><div class="pb-label">Query</div></div>
+    <div class="pb-step"        data-i="1"><div class="pb-circle">2</div><div class="pb-label">Audit</div></div>
+    <div class="pb-step"        data-i="2"><div class="pb-circle">3</div><div class="pb-label">Trust</div></div>
+    <div class="pb-step"        data-i="3"><div class="pb-circle">4</div><div class="pb-label">Map</div></div>
+  </div>
 
-      <div class="progress" id="progress"></div>
-      <div class="controls">
-        <a class="btn" href="/">Back home</a>
-        <button id="next" class="primary">Next</button>
-        <a class="btn" href="/app">Skip</a>
+  <!-- Step 1: Discovery -->
+  <div class="step-card active" data-step="0">
+    <div class="step-num">Step 01 / 04</div>
+    <h2>Ask complex, multi-attribute care questions</h2>
+    <p>
+      Unlike a simple search box, TrustCare combines location, procedure, equipment, specialties,
+      and staffing signals into a single reasoning query — and returns ranked matches with citations.
+    </p>
+    <div class="example-box">
+      <b>Try asking:</b><br/>
+      "Find the nearest facility in rural <b>Bihar</b> that can perform an <b>emergency appendectomy</b>
+      and typically leverages <b>part-time doctors</b>."<br/><br/>
+      "Which hospitals in <b>Jharkhand</b> have a working <b>ICU with ventilator support</b>?"
+    </div>
+    <div class="highlights">
+      <div class="hl">
+        <div class="hl-icon">📍</div>
+        <h4>Location-Aware</h4>
+        <p>Filters by state, city, PIN code, and nearest-to proximity using Haversine distance.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">🔬</div>
+        <h4>Procedure Matching</h4>
+        <p>Searches equipment logs, unstructured descriptions, and specialty tags simultaneously.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">🧠</div>
+        <h4>LLM Reasoning</h4>
+        <p>Gemini 2.5 Flash / Meta-Llama 3 synthesises all signals into a ranked, cited answer.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">🌐</div>
+        <h4>Web Enrichment</h4>
+        <p>Tavily live web search optionally enriches answers with current facility information.</p>
+      </div>
+    </div>
+    <div class="controls">
+      <span style="font-size:.8rem;color:var(--muted)">Ctrl + Enter to submit queries in the app</span>
+      <div class="controls-right">
+        <a class="btn" href="/">Back</a>
+        <button class="btn btn-primary" onclick="goStep(1)">Next: Audit →</button>
       </div>
     </div>
   </div>
-  <script>
-    const steps = [...document.querySelectorAll(".step")];
-    const progress = document.getElementById("progress");
-    const nextBtn = document.getElementById("next");
-    let idx = 0;
 
-    function render() {
-      steps.forEach((s, i) => s.classList.toggle("active", i === idx));
-      progress.innerHTML = "";
-      for (let i = 0; i < steps.length; i++) {
-        const d = document.createElement("span");
-        d.className = "dot" + (i === idx ? " active" : "");
-        progress.appendChild(d);
-      }
-      nextBtn.textContent = idx === steps.length - 1 ? "Go to app" : "Next";
-    }
-    nextBtn.addEventListener("click", () => {
-      if (idx < steps.length - 1) {
-        idx += 1;
-        render();
-      } else {
-        location.href = "/app";
-      }
-    });
-    render();
-  </script>
+  <!-- Step 2: Audit -->
+  <div class="step-card" data-step="1">
+    <div class="step-num">Step 02 / 04</div>
+    <h2>Verify capability claims before trusting them</h2>
+    <p>
+      A facility listing "Advanced Surgery" is not the same as one that actually has an Anesthesiologist
+      and a functional Operation Theatre. The Audit agent cross-checks every claim against evidence
+      from the facility's own records.
+    </p>
+    <div class="example-box">
+      <b>What the Audit tab does:</b><br/>
+      1. Extracts structured capabilities from free-form facility text<br/>
+      2. Cross-references claimed capabilities against reported equipment<br/>
+      3. Marks each as <b>✓ Verified</b>, <b>⚑ Missing evidence</b>, or <b>? Uncertain</b><br/>
+      4. Returns a verification ratio and row-level evidence snippet
+    </div>
+    <div class="highlights">
+      <div class="hl">
+        <div class="hl-icon">✓</div>
+        <h4>Verified</h4>
+        <p>Capability is both claimed AND supported by evidence in the facility record.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">⚑</div>
+        <h4>Missing Evidence</h4>
+        <p>Claimed but not backed by equipment, staff, or procedure evidence — flag for investigation.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">📄</div>
+        <h4>Row-Level Citations</h4>
+        <p>Every verdict cites the exact phrase from the facility record that supports or contradicts it.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">📊</div>
+        <h4>Verification Ratio</h4>
+        <p>A single score (0–100%) summarising how much of the facility's claims are evidence-backed.</p>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn" onclick="goStep(0)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(2)">Next: Trust Scoring →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Trust -->
+  <div class="step-card" data-step="2">
+    <div class="step-num">Step 03 / 04</div>
+    <h2>Understand the Trust Score and confidence intervals</h2>
+    <p>
+      Every recommendation comes with a trust score, contradiction flags, and a
+      bootstrap-based 95% confidence interval — so you know not just <em>what</em>
+      the answer is, but <em>how certain</em> to be about it given the data quality.
+    </p>
+    <div class="trust-demo">
+      <div class="trust-chip">
+        <div class="score" style="color:#22c55e">0.87</div>
+        <div class="label">Trust Score</div>
+        <div class="note">High — claims well-supported by equipment and staff evidence</div>
+      </div>
+      <div class="trust-chip">
+        <div class="score" style="color:#f59e0b">0.54</div>
+        <div class="label">Trust Score</div>
+        <div class="note">Medium — some claims lack supporting evidence</div>
+      </div>
+      <div class="trust-chip">
+        <div class="score" style="color:#ef4444">0.21</div>
+        <div class="label">Trust Score</div>
+        <div class="note">Low — contradictions detected; verify before referral</div>
+      </div>
+    </div>
+    <div class="example-box" style="margin-top:16px">
+      <b>Confidence Interval example:</b><br/>
+      Score: <b>0.72</b> &nbsp;·&nbsp; 95% CI: <b>[0.61, 0.83]</b> &nbsp;·&nbsp; Width: 0.22<br/>
+      <span style="color:var(--muted)">
+        Wider intervals mean the underlying data is sparse or incomplete.
+        Narrower intervals mean stronger evidence exists for the conclusion.
+      </span>
+    </div>
+    <div class="highlights">
+      <div class="hl">
+        <div class="hl-icon">📐</div>
+        <h4>Bootstrap CI</h4>
+        <p>Non-parametric 500-sample bootstrap estimates uncertainty from actual data distribution.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">🏥</div>
+        <h4>TRUST_RULES</h4>
+        <p>Domain-specific rules: "Advanced Surgery" requires Anesthesiologist + OT evidence.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">📈</div>
+        <h4>MLflow 3 Tracing</h4>
+        <p>Every agent step is logged as a span in MLflow — visible in Databricks workspace UI.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">🔄</div>
+        <h4>Self-Correction</h4>
+        <p>A Validator agent cross-checks every output against known standards before returning it.</p>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(3)">Next: Crisis Map →</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Map -->
+  <div class="step-card" data-step="3">
+    <div class="step-num">Step 04 / 04</div>
+    <h2>Use the crisis map to plan interventions</h2>
+    <p>
+      The Desert Finder scans all 10,000+ records grouped by PIN code, city, and state.
+      Any region missing high-acuity specialties is flagged with a priority level and
+      displayed on an interactive India map — ready for NGO and policy planning.
+    </p>
+    <div class="example-box">
+      <b>8 tracked high-acuity specialties:</b><br/>
+      Oncology · Dialysis · Emergency Medicine · Cardiology ·
+      Neonatal Medicine · Trauma Surgery · Intensive Care · Neurology<br/><br/>
+      <b>Priority levels:</b> Critical (≥75% missing) · High (≥50%) · Medium (≥25%) · Low
+    </div>
+    <div class="highlights">
+      <div class="hl">
+        <div class="hl-icon">🗺️</div>
+        <h4>Interactive Leaflet Map</h4>
+        <p>Coloured circle markers sized by severity. Click any marker to see missing specialties and confidence interval.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">📌</div>
+        <h4>Facility Density Layer</h4>
+        <p>Clustered markers show where facilities are concentrated. Green = complete data, red = sparse.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">📥</div>
+        <h4>CSV Export</h4>
+        <p>Download the full planner summary — PIN, city, state, severity, missing specialties, recommended action.</p>
+      </div>
+      <div class="hl">
+        <div class="hl-icon">🧱</div>
+        <h4>Databricks Backend</h4>
+        <p>When configured, data flows from Unity Catalog Delta tables via Mosaic AI Vector Search.</p>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Powered by</div>
+      <div class="tech-row">
+        <span class="tech-badge">🧱 Databricks Free Edition</span>
+        <span class="tech-badge">🔍 Mosaic AI Vector Search</span>
+        <span class="tech-badge">📈 MLflow 3 Tracing</span>
+        <span class="tech-badge">🦙 Meta-Llama 3 / DBRX</span>
+        <span class="tech-badge">🔗 LangGraph Agents</span>
+        <span class="tech-badge">🗄️ Unity Catalog</span>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn" onclick="goStep(2)">← Back</button>
+      <a class="btn btn-primary" href="/app">Open Workspace →</a>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+let current = 0;
+const steps  = document.querySelectorAll(".step-card");
+const pbSteps = document.querySelectorAll(".pb-step");
+
+function goStep(n) {
+  steps[current].classList.remove("active");
+  pbSteps[current].classList.remove("active");
+  if (current < n) pbSteps[current].classList.add("done");
+  else pbSteps[current].classList.remove("done");
+
+  current = n;
+  steps[current].classList.add("active");
+  pbSteps[current].classList.add("active");
+  // mark all before as done
+  pbSteps.forEach((s, i) => {
+    if (i < current) s.classList.add("done");
+    else if (i > current) s.classList.remove("done");
+  });
+  window.scrollTo({top: 0, behavior: "smooth"});
+}
+</script>
 </body>
 </html>

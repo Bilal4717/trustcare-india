@@ -3,680 +3,868 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Serving a Nation - Intelligence Workspace</title>
+  <title>TrustCare India — Intelligence Workspace</title>
+
+  <!-- Leaflet for interactive map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Marker cluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
   <style>
     :root {
-      --bg: #070707;
-      --bg-elev: #111111;
-      --bg-elev-2: #171717;
-      --text: #f5f5f5;
-      --muted: #b3b3b3;
-      --red: #e50914;
-      --red-soft: #ff3b47;
-      --ok: #2ec27e;
-      --warn: #ffb020;
-      --bad: #ff6b72;
-      --line: #2a2a2a;
-      --shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      --bg:     #07090f;
+      --bg-e:   #0e1320;
+      --bg-e2:  #111827;
+      --text:   #f0f4ff;
+      --muted:  #8b9fc7;
+      --line:   #1e2d4a;
+      --line2:  #253350;
+      --accent: #3b82f6;
+      --a2:     #60a5fa;
+      --red:    #ef4444;
+      --green:  #22c55e;
+      --orange: #f59e0b;
+      --bad:    #fb7185;
       --radius: 14px;
+      --shadow: 0 8px 32px rgba(0,0,0,.45);
     }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
     body {
-      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background:
-        radial-gradient(1000px 400px at 0% -10%, rgba(229, 9, 20, 0.15), transparent 55%),
-        linear-gradient(180deg, #080808 0%, #0f0f0f 100%);
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
       color: var(--text);
-      line-height: 1.48;
-    }
-    .app-shell {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 18px 16px 40px;
-    }
-    .top-nav {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: rgba(10, 10, 10, 0.86);
-      backdrop-filter: blur(8px);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-    .brand {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-    .brand-mark {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      background: linear-gradient(140deg, var(--red), #ff6a73);
-      box-shadow: 0 0 0 6px rgba(229, 9, 20, 0.22);
-    }
-    .menu {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .menu a {
-      text-decoration: none;
-      color: var(--muted);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 0.82rem;
-      background: #121212;
-    }
-    .menu a:hover {
-      color: var(--text);
-      border-color: #424242;
-    }
-    .status-chip {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      font-size: 0.8rem;
-      color: var(--muted);
-      background: #131313;
-      padding: 6px 10px;
-      white-space: nowrap;
-    }
-    .status-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 6px;
-      background: var(--warn);
-    }
-    .status-ok { background: var(--ok); }
-
-    .hero {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 24px;
-      background:
-        linear-gradient(180deg, rgba(229, 9, 20, 0.2), rgba(229, 9, 20, 0.03)),
-        linear-gradient(135deg, #151515 0%, #101010 100%);
-      box-shadow: var(--shadow);
-      margin-bottom: 14px;
-    }
-    .hero h1 {
-      margin: 0 0 10px 0;
-      font-size: clamp(1.7rem, 3vw, 2.45rem);
-      line-height: 1.15;
-      letter-spacing: 0.2px;
-    }
-    .hero p {
-      margin: 0;
-      color: #cfcfcf;
-      max-width: 920px;
-      font-size: clamp(0.95rem, 1.8vw, 1.04rem);
-    }
-    .rubric {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 14px;
-    }
-    .rubric span {
-      border: 1px solid #3b2023;
-      border-radius: 999px;
-      padding: 5px 10px;
-      font-size: 0.78rem;
-      color: #f6ced1;
-      background: rgba(229, 9, 20, 0.12);
+      line-height: 1.5;
+      font-size: 14px;
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 1.45fr 1fr;
-      gap: 14px;
+    /* ── shell ── */
+    .shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* ── top nav ── */
+    .top-bar {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 0 16px;
+      height: 52px;
+      background: rgba(7,9,15,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+      z-index: 200;
     }
+    .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: .95rem; }
+    .brand-dot { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg,#3b82f6,#60a5fa); box-shadow: 0 0 0 5px rgba(59,130,246,.18); }
+    .top-links { display: flex; gap: 6px; }
+    .top-links a { color: var(--muted); text-decoration: none; font-size: .8rem; border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; background: var(--bg-e); transition: color .15s, border-color .15s; }
+    .top-links a:hover { color: var(--text); border-color: var(--line2); }
+    .sys-chip { display: flex; align-items: center; gap: 7px; font-size: .78rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: var(--bg-e); white-space: nowrap; }
+    .sys-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+    .sys-dot.ok { background: var(--green); }
+
+    /* ── tab bar ── */
+    .tab-bar {
+      flex-shrink: 0;
+      display: flex; gap: 0;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+    }
+    .tab-btn {
+      padding: 12px 16px; font-size: .84rem; font-weight: 500;
+      color: var(--muted); border: none; background: transparent;
+      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color .15s, border-color .15s; white-space: nowrap;
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    /* ── body ── */
+    .body { flex: 1; overflow: hidden; position: relative; }
+    .tab-panel { display: none; height: 100%; overflow-y: auto; padding: 14px 16px 24px; }
+    .tab-panel.active { display: block; }
+    /* map panel needs no scroll */
+    #panel-map.active { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+
+    /* ── grid layouts ── */
+    .grid-2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+    .full { grid-column: 1 / -1; }
+
+    /* ── card ── */
     .card {
-      background: linear-gradient(180deg, var(--bg-elev), var(--bg-elev-2));
+      background: linear-gradient(160deg, var(--bg-e), var(--bg-e2));
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
       padding: 14px;
+      box-shadow: var(--shadow);
     }
-    .card h2 {
-      margin: 0 0 10px;
-      font-size: 1.02rem;
-      letter-spacing: 0.2px;
-    }
-    .card h3 {
-      margin: 0 0 6px;
-      font-size: 0.92rem;
-      color: #fafafa;
-    }
-    .muted-sm {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.84rem;
-    }
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .feature {
-      border: 1px solid #292929;
-      border-radius: 10px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.02);
-    }
+    .card-title { font-size: .88rem; font-weight: 600; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .card-title .tag { font-size: .7rem; font-weight: 500; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 
-    .workspace {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: 1.3fr 1fr;
-      gap: 14px;
+    /* ── form elements ── */
+    textarea, input[type="text"] {
+      width: 100%; padding: 10px 12px;
+      background: rgba(255,255,255,.04); border: 1px solid var(--line2);
+      border-radius: 10px; color: var(--text); font: inherit; font-size: .9rem;
+      outline: none; resize: vertical;
+      transition: border-color .15s, background .15s;
     }
-    .full { grid-column: 1 / -1; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    textarea, input {
-      width: 100%;
-      color: var(--text);
-      border: 1px solid #303030;
-      border-radius: 10px;
-      background: #0f0f0f;
-      padding: 10px;
-      font: inherit;
-    }
-    textarea { min-height: 100px; resize: vertical; }
+    textarea:focus, input[type="text"]:focus { border-color: var(--accent); background: rgba(59,130,246,.06); }
+    textarea { min-height: 90px; }
     button {
-      border: 1px solid #333;
-      border-radius: 10px;
-      background: #1b1b1b;
-      color: var(--text);
-      padding: 8px 12px;
-      font: inherit;
-      cursor: pointer;
-      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border: 1px solid var(--line2); border-radius: 10px;
+      background: var(--bg-e); color: var(--text); font: inherit; font-size: .85rem;
+      cursor: pointer; transition: background .15s, border-color .15s, transform .12s;
     }
-    button:hover {
-      transform: translateY(-1px);
-      border-color: #4a4a4a;
-      background: #232323;
-    }
-    button.primary {
-      background: linear-gradient(180deg, var(--red-soft), var(--red));
-      color: #fff;
-      border-color: #b70e18;
-      font-weight: 700;
-    }
-    button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-    .quick {
-      font-size: .82rem;
-      background: #1a1a1a;
-      color: #d6d6d6;
-    }
+    button:hover { background: #1a2540; border-color: var(--line2); transform: translateY(-1px); }
+    button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-run { background: linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; font-weight:700; border-color:#2563eb; box-shadow: 0 0 0 1px rgba(59,130,246,.3); }
+    .btn-run:hover { background: linear-gradient(135deg,#2563eb,#60a5fa); box-shadow: 0 0 0 1px rgba(59,130,246,.5); }
+    .btn-sm { padding: 6px 10px; font-size: .78rem; border-radius: 8px; }
+    .quick-btn { font-size: .78rem; color: var(--muted); border-color: var(--line); border-radius: 999px; padding: 5px 10px; }
+    .quick-btn:hover { color: var(--text); }
 
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    .metric {
-      border: 1px solid #2c2c2c;
-      border-radius: 10px;
-      padding: 9px;
-      background: #141414;
-    }
-    .metric .k { font-size: .76rem; color: var(--muted); }
-    .metric .v { margin-top: 4px; font-size: 1.05rem; font-weight: 600; }
-    .list { margin: 0; padding-left: 18px; color: #d2d2d2; }
-    .list li { margin: 6px 0; }
-    .flag { color: var(--bad); }
-    .ok { color: var(--ok); }
-    pre {
-      margin: 0;
-      white-space: pre-wrap;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      color: #e8e8e8;
-      font-size: .83rem;
-      line-height: 1.42;
-    }
-    .cite {
-      border: 1px solid #2b2b2b;
-      border-radius: 10px;
-      background: #131313;
-      padding: 10px;
-      margin-bottom: 8px;
-    }
-    .cite b { color: #ffffff; }
-    .table-wrap { overflow: auto; }
-    .map-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .84rem;
-    }
-    .map-table th, .map-table td {
-      text-align: left;
-      border-bottom: 1px solid #2a2a2a;
-      padding: 7px 5px;
-      vertical-align: top;
-    }
-    .map-table th { color: #dddddd; font-weight: 600; }
+    /* ── metrics row ── */
+    .metric { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: rgba(255,255,255,.03); }
+    .metric .k { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }
+    .metric .v { font-size: 1.1rem; font-weight: 700; }
+    .v.blue   { color: var(--a2); }
+    .v.green  { color: var(--green); }
+    .v.orange { color: var(--orange); }
+    .v.red    { color: var(--bad); }
 
-    @media (max-width: 1100px) {
-      .layout, .workspace { grid-template-columns: 1fr; }
-      .feature-grid { grid-template-columns: 1fr; }
+    /* ── trust gauge ── */
+    .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
+    .gauge-svg { width: 120px; height: 70px; }
+    .gauge-label { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+    .gauge-val { font-size: 1.4rem; font-weight: 800; color: var(--text); line-height: 1; }
+
+    /* ── answer box ── */
+    .answer-box {
+      background: rgba(255,255,255,.025); border: 1px solid var(--line);
+      border-radius: 10px; padding: 12px; min-height: 80px;
+      font-size: .87rem; line-height: 1.6; color: #d8e4ff; white-space: pre-wrap;
+      overflow-y: auto; max-height: 340px;
+    }
+    .skeleton { background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; height: 16px; margin: 6px 0; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ── audit output ── */
+    .audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .audit-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 9px; border-radius: 999px; font-size: .75rem; font-weight: 500;
+    }
+    .pill-ok  { background: rgba(34,197,94,.15);  color: var(--green); border: 1px solid rgba(34,197,94,.3);  }
+    .pill-bad { background: rgba(239,68,68,.15);  color: var(--bad);   border: 1px solid rgba(239,68,68,.3);  }
+    .pill-warn{ background: rgba(245,158,11,.15); color: var(--orange);border: 1px solid rgba(245,158,11,.3); }
+
+    /* ── CI bar ── */
+    .ci-bar-wrap { margin-top: 8px; }
+    .ci-label { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }
+    .ci-track { height: 6px; background: rgba(255,255,255,.07); border-radius: 999px; position: relative; }
+    .ci-fill  { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--a2)); }
+    .ci-marker{ position: absolute; top: -4px; width: 2px; height: 14px; background: #fff; border-radius: 1px; }
+
+    /* ── cot steps ── */
+    .cot-list { list-style: none; }
+    .cot-list li { display: flex; gap: 9px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: .82rem; color: var(--muted); }
+    .cot-list li:last-child { border-bottom: none; }
+    .cot-list li::before { content: "→"; color: var(--accent); flex-shrink: 0; }
+
+    /* ── citations ── */
+    .cite-card { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,.02); }
+    .cite-name { font-weight: 600; font-size: .84rem; color: var(--text); }
+    .cite-pin  { font-size: .75rem; color: var(--muted); margin-left: 6px; }
+    .cite-text { font-size: .79rem; color: #99b4e0; margin-top: 5px; line-height: 1.5; }
+
+    /* ── flags list ── */
+    .flag-item { display: flex; gap: 7px; align-items: flex-start; padding: 5px 0; font-size: .81rem; }
+    .flag-item.bad  { color: var(--bad); }
+    .flag-item.ok   { color: var(--green); }
+    .flag-item::before { content: "⚑"; flex-shrink: 0; }
+    .flag-item.ok::before { content: "✓"; }
+
+    /* ── reason codes ── */
+    .code-tag { display: inline-block; background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.2); color: var(--a2); font-size: .72rem; border-radius: 6px; padding: 2px 7px; margin: 2px; }
+
+    /* ── desert table ── */
+    .tbl-wrap { overflow: auto; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th { text-align: left; color: var(--muted); font-weight: 600; padding: 7px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    td { padding: 6px 6px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .priority-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .7rem; font-weight: 600; }
+    .p-critical { background: rgba(239,68,68,.15);  color: #fb7185; border: 1px solid rgba(239,68,68,.3); }
+    .p-high     { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+    .p-medium   { background: rgba(234,179,8,.15);  color: #facc15; border: 1px solid rgba(234,179,8,.3);  }
+    .p-low      { background: rgba(34,197,94,.15);  color: #4ade80; border: 1px solid rgba(34,197,94,.3);  }
+
+    /* ── map panel ── */
+    .map-toolbar { flex-shrink: 0; display: flex; gap: 8px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--bg-e); flex-wrap: wrap; }
+    .map-toolbar span { font-size: .78rem; color: var(--muted); }
+    #leaflet-map { flex: 1; min-height: 0; }
+    .leaflet-tile-pane { filter: brightness(.75) saturate(.4) hue-rotate(190deg); }
+    .legend-box { background: rgba(14,19,32,.9); border: 1px solid #1e2d4a; border-radius: 10px; padding: 10px 12px; font-size: .76rem; }
+    .leg-row { display: flex; align-items: center; gap: 7px; margin: 4px 0; color: #b0c4e8; }
+    .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── stats panel ── */
+    .stat-section { margin-bottom: 16px; }
+    .stat-section h3 { font-size: .84rem; font-weight: 600; margin-bottom: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+    .fill-bar { height: 6px; background: rgba(255,255,255,.07); border-radius: 999px; margin-top: 4px; overflow: hidden; }
+    .fill-bar-inner { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--a2)); }
+    .fill-row { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── loading overlay ── */
+    .loading-overlay {
+      position: absolute; inset: 0; background: rgba(7,9,15,.75);
+      display: none; align-items: center; justify-content: center;
+      z-index: 50; border-radius: var(--radius);
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner { width: 28px; height: 28px; border: 3px solid var(--line2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 999px; }
+
+    /* ── responsive ── */
+    @media (max-width: 960px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="top-nav">
-      <div class="brand">
-        <span class="brand-mark"></span>
-        Serving a Nation
-      </div>
-      <nav class="menu">
-        <a href="/app">Workspace</a>
-        <a href="/onboarding">Onboarding</a>
-        <a href="/">Home</a>
-      </nav>
-      <span class="status-chip">
-        <span id="health-dot" class="status-dot"></span><span id="health-line">Checking system...</span>
-      </span>
-    </header>
+<div class="shell">
 
-    <section class="hero">
-      <h1>Healthcare Intelligence Workspace</h1>
-      <p>
-        Query, verify, and map healthcare capabilities with explainable reasoning across 10k+ Indian facility records.
-        Built for fast decisions, transparent evidence, and planning impact.
-      </p>
-      <div class="rubric">
-        <span>Discovery & Verification (35%)</span>
-        <span>IDP Innovation (30%)</span>
-        <span>Social Impact (25%)</span>
-        <span>UX & Transparency (10%)</span>
-      </div>
-    </section>
+  <!-- ── Top nav ── -->
+  <header class="top-bar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      TrustCare India
+    </div>
+    <nav class="top-links">
+      <a href="/">Home</a>
+      <a href="/onboarding">Guide</a>
+      <a href="/desert/export.csv" target="_blank">Export CSV</a>
+      <a href="/stats" target="_blank">Stats API</a>
+    </nav>
+    <div class="sys-chip">
+      <span class="sys-dot" id="sys-dot"></span>
+      <span id="sys-line">Connecting…</span>
+    </div>
+  </header>
 
-    <section class="layout">
-      <article class="card">
-        <h2>What you can do here</h2>
-        <div class="feature-grid">
-          <div class="feature">
-            <h3>Discover facilities</h3>
-            <p class="muted-sm">Search using multi-attribute needs: location, procedure, equipment, and specialty.</p>
-          </div>
-          <div class="feature">
-            <h3>Audit claims</h3>
-            <p class="muted-sm">Verify capability claims against evidence snippets from facility descriptions.</p>
-          </div>
-          <div class="feature">
-            <h3>Track deserts</h3>
-            <p class="muted-sm">Surface high-risk regions missing high-acuity specialties for policy and NGO action.</p>
-          </div>
-        </div>
-      </article>
-      <article class="card">
-        <h2>Live runtime</h2>
-        <div class="stats">
-          <div class="metric"><div class="k">LLM Backend</div><div class="v" id="m-backend">-</div></div>
-          <div class="metric"><div class="k">Chat Model</div><div class="v" id="m-model">-</div></div>
-          <div class="metric"><div class="k">Embeddings</div><div class="v" id="m-embed">-</div></div>
-          <div class="metric"><div class="k">Tavily Context</div><div class="v" id="m-tavily">-</div></div>
-        </div>
-      </article>
-    </section>
-
-    <section class="workspace">
-      <article class="card">
-        <h2>Assistant Query</h2>
-        <textarea id="q" placeholder="e.g. Find nearest emergency appendectomy support in rural Bihar with part-time staffing signals"></textarea>
-        <div class="row" style="margin-top:8px;">
-          <button class="primary" id="go">Run Query</button>
-          <button id="clear">Clear</button>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <button class="quick">ICU + ventilator in Jharkhand</button>
-          <button class="quick">Audit: Apollo, Delhi</button>
-          <button class="quick">Oncology deserts by PIN</button>
-        </div>
-      </article>
-
-      <article class="card">
-        <h2>Direct Audit</h2>
-        <p class="muted-sm">Run a focused capability audit for a specific facility.</p>
-        <div class="row" style="margin-top:8px;">
-          <input id="audit-name" placeholder="Facility name (e.g. Apollo Hospital Delhi)" />
-          <button id="btn-audit" class="primary">Run Audit</button>
-        </div>
-        <pre id="audit-out" style="margin-top:8px;">No audit run yet.</pre>
-      </article>
-
-      <article class="card">
-        <h2>Answer</h2>
-        <pre id="answer">Run a query to see ranked recommendations and justification.</pre>
-      </article>
-
-      <article class="card">
-        <h2>Trust & Validation</h2>
-        <div class="stats">
-          <div class="metric"><div class="k">Trust Score</div><div class="v" id="trust-score">-</div></div>
-          <div class="metric"><div class="k">Flags Count</div><div class="v" id="flags-count">-</div></div>
-          <div class="metric"><div class="k">Confidence</div><div class="v" id="confidence-score">-</div></div>
-          <div class="metric"><div class="k">Confidence Band</div><div class="v" id="confidence-band">-</div></div>
-        </div>
-        <ul id="trust-flags" class="list" style="margin-top:10px;">
-          <li class="muted-sm">No trust output yet.</li>
-        </ul>
-        <ul id="reason-codes" class="list" style="margin-top:8px;">
-          <li class="muted-sm">Reason codes will appear after inference.</li>
-        </ul>
-      </article>
-
-      <article class="card">
-        <h2>Reasoning Trace</h2>
-        <ol id="cot" class="list">
-          <li class="muted-sm">No steps yet.</li>
-        </ol>
-      </article>
-
-      <article class="card">
-        <h2>Row-Level Evidence</h2>
-        <div id="citations">
-          <p class="muted-sm">Evidence snippets will appear here to justify recommendations.</p>
-        </div>
-      </article>
-
-      <article class="card full">
-        <h2>Crisis Mapping</h2>
-        <div class="row">
-          <button id="btn-desert">Load Desert Summary</button>
-          <button id="btn-map">Load Crisis Map Data</button>
-        </div>
-        <p class="muted-sm" style="margin-top:8px;">Regions are sorted by missing high-acuity specialties.</p>
-        <div class="table-wrap" style="margin-top:8px;">
-          <table class="map-table" id="desert-table">
-            <thead>
-              <tr>
-                <th>PIN</th>
-                <th>City</th>
-                <th>State</th>
-                <th>Missing Specialties</th>
-                <th>Facilities</th>
-                <th>Coords</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="6" class="muted-sm">No desert data loaded yet.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </article>
-    </section>
+  <!-- ── Tab bar ── -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="query">🔍 Query</button>
+    <button class="tab-btn" data-tab="audit">🛡️ Audit</button>
+    <button class="tab-btn" data-tab="map">🗺️ Crisis Map</button>
+    <button class="tab-btn" data-tab="stats">📊 Dataset Stats</button>
   </div>
 
-  <script>
-    const ui = {
-      q: document.getElementById("q"),
-      auditName: document.getElementById("audit-name"),
-      auditOut: document.getElementById("audit-out"),
-      answer: document.getElementById("answer"),
-      trustScore: document.getElementById("trust-score"),
-      flagsCount: document.getElementById("flags-count"),
-      confidenceScore: document.getElementById("confidence-score"),
-      confidenceBand: document.getElementById("confidence-band"),
-      trustFlags: document.getElementById("trust-flags"),
-      reasonCodes: document.getElementById("reason-codes"),
-      cot: document.getElementById("cot"),
-      citations: document.getElementById("citations"),
-      desertTableBody: document.querySelector("#desert-table tbody"),
-      healthDot: document.getElementById("health-dot"),
-      healthLine: document.getElementById("health-line"),
-      mBackend: document.getElementById("m-backend"),
-      mModel: document.getElementById("m-model"),
-      mEmbed: document.getElementById("m-embed"),
-      mTavily: document.getElementById("m-tavily"),
-      runBtn: document.getElementById("go"),
-    };
+  <!-- ── Body ── -->
+  <div class="body">
 
-    async function fetchJson(url, opts = {}) {
-      const res = await fetch(url, opts);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.response || ("Request failed: " + res.status));
-      return data;
-    }
+    <!-- ════════════════ QUERY PANEL ════════════════ -->
+    <div id="panel-query" class="tab-panel active">
+      <div class="grid-2" style="margin-bottom:12px">
 
-    function setLoading(on) {
-      ui.runBtn.disabled = on;
-      ui.runBtn.textContent = on ? "Running..." : "Run Query";
-    }
+        <!-- Query input -->
+        <div class="card" style="position:relative">
+          <div class="loading-overlay" id="query-loading"><div class="spinner"></div></div>
+          <div class="card-title">Assistant Query</div>
+          <textarea id="q" placeholder="e.g. Find nearest emergency appendectomy support in rural Bihar with part-time staffing signals…"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <button class="btn-run" id="btn-run">Run Query</button>
+            <button id="btn-clear" class="btn-sm">Clear</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+            <button class="quick-btn">ICU + ventilator in Jharkhand</button>
+            <button class="quick-btn">Dialysis in rural Rajasthan</button>
+            <button class="quick-btn">Oncology deserts by PIN</button>
+            <button class="quick-btn">Neonatal ICU near Bihar</button>
+          </div>
+        </div>
 
-    function renderMainResponse(data) {
-      ui.answer.textContent = data.response || "(No response text)";
+        <!-- Runtime metrics -->
+        <div class="card">
+          <div class="card-title">Live Runtime</div>
+          <div class="grid-2" style="gap:8px">
+            <div class="metric"><div class="k">LLM Backend</div><div class="v blue" id="m-backend">—</div></div>
+            <div class="metric"><div class="k">Chat Model</div><div class="v" id="m-model" style="font-size:.85rem">—</div></div>
+            <div class="metric"><div class="k">Embeddings</div><div class="v" id="m-embed" style="font-size:.78rem">—</div></div>
+            <div class="metric"><div class="k">Tavily Web</div><div class="v" id="m-tavily">—</div></div>
+          </div>
+          <div style="margin-top:10px">
+            <div class="metric"><div class="k">Data Source</div><div class="v blue" id="m-datasource" style="font-size:.82rem">—</div></div>
+          </div>
+        </div>
+      </div>
 
-      const ts = data.trust_score;
-      ui.trustScore.textContent = (typeof ts === "number") ? ts.toFixed(3) : "-";
-      const cs = data.confidence_score;
-      ui.confidenceScore.textContent = (typeof cs === "number") ? cs.toFixed(3) : "-";
-      ui.confidenceBand.textContent = data.confidence_band || "-";
+      <div class="grid-2" style="margin-bottom:12px">
+        <!-- Answer -->
+        <div class="card">
+          <div class="card-title">Answer <span class="tag" id="intent-tag">—</span></div>
+          <div class="answer-box" id="answer">Run a query to see ranked recommendations and citations.</div>
+        </div>
 
-      const flags = Array.isArray(data.trust_flags) ? data.trust_flags : [];
-      ui.flagsCount.textContent = String(flags.length);
-      ui.trustFlags.innerHTML = "";
-      if (!flags.length) {
-        ui.trustFlags.innerHTML = "<li class='ok'>No contradictions flagged.</li>";
-      } else {
-        for (const f of flags) {
-          const li = document.createElement("li");
-          li.className = "flag";
-          li.textContent = f;
-          ui.trustFlags.appendChild(li);
-        }
-      }
+        <!-- Trust & confidence -->
+        <div class="card">
+          <div class="card-title">Trust &amp; Confidence</div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div class="gauge-wrap">
+              <svg class="gauge-svg" viewBox="0 0 120 70">
+                <path d="M15,65 A55,55 0 0,1 105,65" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="10" stroke-linecap="round"/>
+                <path id="gauge-arc" d="M15,65 A55,55 0 0,1 105,65" fill="none" stroke="url(#gauge-grad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="172" stroke-dashoffset="172"/>
+                <defs>
+                  <linearGradient id="gauge-grad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ef4444"/>
+                    <stop offset="50%" stop-color="#f59e0b"/>
+                    <stop offset="100%" stop-color="#22c55e"/>
+                  </linearGradient>
+                </defs>
+                <text x="60" y="58" text-anchor="middle" fill="#f0f4ff" font-size="18" font-weight="800" font-family="Inter,sans-serif" id="gauge-text">—</text>
+              </svg>
+              <div class="gauge-label" id="gauge-band">Confidence Band</div>
+            </div>
+            <div style="flex:1">
+              <div class="grid-2" style="gap:6px">
+                <div class="metric"><div class="k">Trust Score</div><div class="v" id="trust-score">—</div></div>
+                <div class="metric"><div class="k">Flags</div><div class="v red" id="flags-count">—</div></div>
+              </div>
+              <!-- Confidence interval bar -->
+              <div class="ci-bar-wrap" id="ci-wrap" style="display:none">
+                <div class="ci-label">Confidence Interval (95%)</div>
+                <div class="ci-track">
+                  <div class="ci-fill" id="ci-fill"></div>
+                  <div class="ci-marker" id="ci-marker"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:3px">
+                  <span id="ci-lo">—</span><span id="ci-hi">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Trust flags -->
+          <div id="trust-flags" style="margin-top:10px"></div>
+          <!-- Reason codes -->
+          <div id="reason-codes" style="margin-top:8px"></div>
+        </div>
+      </div>
 
-      const steps = Array.isArray(data.chain_of_thought) ? data.chain_of_thought : [];
-      ui.cot.innerHTML = "";
-      if (!steps.length) {
-        ui.cot.innerHTML = "<li class='muted-sm'>No reasoning trace provided.</li>";
-      } else {
-        for (const s of steps) {
-          const li = document.createElement("li");
-          li.textContent = s;
-          ui.cot.appendChild(li);
-        }
-      }
+      <div class="grid-2">
+        <!-- Chain of thought -->
+        <div class="card">
+          <div class="card-title">Reasoning Trace</div>
+          <ol id="cot" class="cot-list"><li>No steps yet.</li></ol>
+        </div>
 
-      const cites = Array.isArray(data.source_citations) ? data.source_citations : [];
-      ui.citations.innerHTML = "";
-      if (!cites.length) {
-        ui.citations.innerHTML = "<p class='muted-sm'>No source excerpts returned.</p>";
-      } else {
-        for (const c of cites) {
-          const div = document.createElement("div");
-          div.className = "cite";
-          const name = c.facility_name || "Unknown facility";
-          const pin = c.pin || "-";
-          const text = c.evidence_snippet || c.trust_evidence_snippet || "-";
-          div.innerHTML = "<b>" + escapeHtml(name) + "</b> <span class='muted-sm'>(PIN " + escapeHtml(pin) + ")</span><br/>" + escapeHtml(text);
-          ui.citations.appendChild(div);
-        }
-      }
+        <!-- Evidence citations -->
+        <div class="card">
+          <div class="card-title">Row-Level Evidence</div>
+          <div id="citations"><p style="color:var(--muted);font-size:.84rem">Evidence snippets appear here after a query.</p></div>
+        </div>
+      </div>
+    </div>
 
-      const codes = Array.isArray(data.reason_codes) ? data.reason_codes : [];
-      ui.reasonCodes.innerHTML = "";
-      if (!codes.length) {
-        ui.reasonCodes.innerHTML = "<li class='muted-sm'>Reason codes not available.</li>";
-      } else {
-        for (const c of codes) {
-          const li = document.createElement("li");
-          li.textContent = c;
-          ui.reasonCodes.appendChild(li);
-        }
-      }
-    }
+    <!-- ════════════════ AUDIT PANEL ════════════════ -->
+    <div id="panel-audit" class="tab-panel">
+      <div class="grid-2" style="margin-bottom:12px">
+        <div class="card" style="position:relative">
+          <div class="loading-overlay" id="audit-loading"><div class="spinner"></div></div>
+          <div class="card-title">Capability Audit</div>
+          <p style="font-size:.83rem;color:var(--muted);margin-bottom:10px">Verify a specific facility's capability claims against evidence from the dataset.</p>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="audit-name" placeholder="Facility name, e.g. Apollo Hospital Delhi" style="flex:1"/>
+            <button class="btn-run" id="btn-audit">Audit</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+            <button class="quick-btn" onclick="document.getElementById('audit-name').value=this.textContent;document.getElementById('btn-audit').click()">Apollo Hospital Delhi</button>
+            <button class="quick-btn" onclick="document.getElementById('audit-name').value=this.textContent;document.getElementById('btn-audit').click()">AIIMS Patna</button>
+            <button class="quick-btn" onclick="document.getElementById('audit-name').value=this.textContent;document.getElementById('btn-audit').click()">Fortis Jaipur</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Audit Confidence</div>
+          <div class="grid-2" style="gap:8px">
+            <div class="metric"><div class="k">Confidence</div><div class="v blue" id="a-conf">—</div></div>
+            <div class="metric"><div class="k">Band</div><div class="v" id="a-band">—</div></div>
+            <div class="metric"><div class="k">CI Lower</div><div class="v" id="a-ci-lo">—</div></div>
+            <div class="metric"><div class="k">CI Upper</div><div class="v" id="a-ci-hi">—</div></div>
+          </div>
+        </div>
+      </div>
 
-    function renderDesertTable(rows) {
-      ui.desertTableBody.innerHTML = "";
-      if (!rows.length) {
-        ui.desertTableBody.innerHTML = "<tr><td colspan='6' class='muted-sm'>No desert records returned.</td></tr>";
-        return;
-      }
-      for (const r of rows.slice(0, 40)) {
-        const tr = document.createElement("tr");
-        const missing = Array.isArray(r.missing_specialties) ? r.missing_specialties.join(", ") : "-";
-        const coords = (r.lat != null && r.lon != null) ? (r.lat.toFixed(4) + ", " + r.lon.toFixed(4)) : "-";
-        tr.innerHTML =
-          "<td>" + escapeHtml(String(r.pin || "-")) + "</td>" +
-          "<td>" + escapeHtml(String(r.city || "-")) + "</td>" +
-          "<td>" + escapeHtml(String(r.state || "-")) + "</td>" +
-          "<td>" + escapeHtml(missing) + "</td>" +
-          "<td>" + escapeHtml(String(r.facility_count || "-")) + "</td>" +
-          "<td>" + escapeHtml(coords) + "</td>";
-        ui.desertTableBody.appendChild(tr);
-      }
-    }
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Capability Verification</div>
+          <div id="audit-caps"><p style="color:var(--muted);font-size:.83rem">Run an audit to see claimed vs. verified capabilities.</p></div>
+          <div id="audit-meta" style="margin-top:10px;display:none">
+            <div class="grid-2" style="gap:8px">
+              <div class="metric"><div class="k">Doctors</div><div class="v" id="a-doctors">—</div></div>
+              <div class="metric"><div class="k">Bed Capacity</div><div class="v" id="a-beds">—</div></div>
+              <div class="metric"><div class="k">Verification Ratio</div><div class="v green" id="a-ratio">—</div></div>
+              <div class="metric"><div class="k">Alternatives</div><div class="v" id="a-alts">—</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Evidence &amp; Chain of Thought</div>
+          <div id="audit-cot" class="cot-list" style="list-style:none"><li style="color:var(--muted);font-size:.83rem">No audit run yet.</li></div>
+          <div id="audit-cites" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
 
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll("\"", "&quot;")
-        .replaceAll("'", "&#39;");
-    }
+    <!-- ════════════════ MAP PANEL ════════════════ -->
+    <div id="panel-map" class="tab-panel">
+      <div class="map-toolbar">
+        <button class="btn-sm" id="btn-load-deserts">Load Desert Regions</button>
+        <button class="btn-sm" id="btn-load-facilities">Load Facility Markers</button>
+        <button class="btn-sm" id="btn-clear-map">Clear Map</button>
+        <span id="map-status">Click a button to load data onto the map.</span>
+      </div>
+      <div id="leaflet-map"></div>
+    </div>
 
-    async function runQuery() {
-      const message = ui.q.value.trim();
-      if (!message) return;
-      setLoading(true);
-      try {
-        const data = await fetchJson("/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: message }),
-        });
-        renderMainResponse(data);
-      } catch (e) {
-        ui.answer.textContent = "Error: " + e.message;
-      } finally {
-        setLoading(false);
-      }
-    }
+    <!-- ════════════════ STATS PANEL ════════════════ -->
+    <div id="panel-stats" class="tab-panel">
+      <div class="grid-2" style="margin-bottom:12px">
+        <div class="card">
+          <div class="card-title">Dataset Overview</div>
+          <div class="grid-2" style="gap:8px">
+            <div class="metric"><div class="k">Total Facilities</div><div class="v blue" id="st-total">—</div></div>
+            <div class="metric"><div class="k">States Covered</div><div class="v" id="st-states">—</div></div>
+            <div class="metric"><div class="k">Cities Covered</div><div class="v" id="st-cities">—</div></div>
+            <div class="metric"><div class="k">With GPS Coords</div><div class="v green" id="st-geo">—</div></div>
+          </div>
+          <div style="margin-top:10px">
+            <div class="metric"><div class="k">Overall Data Completeness</div><div class="v" id="st-comp">—</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Completeness Distribution</div>
+          <div style="display:flex;flex-direction:column;gap:10px" id="comp-dist">
+            <p style="color:var(--muted);font-size:.83rem">Loading…</p>
+          </div>
+          <p style="font-size:.75rem;color:var(--muted);margin-top:10px;line-height:1.5" id="st-note"></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Field Fill Rates</div>
+        <div id="fill-rates" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <p style="color:var(--muted);font-size:.83rem">Loading…</p>
+        </div>
+      </div>
+    </div>
 
-    async function runAudit() {
-      const facility = ui.auditName.value.trim();
-      if (!facility) {
-        ui.auditOut.textContent = "Please enter a facility name.";
-        return;
-      }
-      ui.auditOut.textContent = "Running audit...";
-      try {
-        const data = await fetchJson("/audit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ facility_name: facility }),
-        });
-        ui.auditOut.textContent = JSON.stringify(data.audit_result || data, null, 2);
-        if (data.chain_of_thought) {
-          const merged = {
-            response: data.response || "",
-            chain_of_thought: data.chain_of_thought || [],
-            source_citations: data.source_citations || [],
-            trust_score: null,
-            trust_flags: [],
-          };
-          renderMainResponse(merged);
-        }
-      } catch (e) {
-        ui.auditOut.textContent = "Audit error: " + e.message;
-      }
-    }
+  </div><!-- /body -->
+</div><!-- /shell -->
 
-    async function loadHealth() {
-      try {
-        const h = await fetchJson("/health");
-        ui.healthDot.classList.add("status-ok");
-        ui.healthLine.textContent = "System online";
-        ui.mBackend.textContent = h.llm_backend || "-";
-        ui.mModel.textContent = h.chat_model || "-";
-        ui.mEmbed.textContent = h.embeddings || "-";
-        ui.mTavily.textContent = h.tavily_configured ? "Enabled" : "Disabled";
-      } catch (e) {
-        ui.healthLine.textContent = "Health check failed";
-        ui.mBackend.textContent = "-";
-        ui.mModel.textContent = "-";
-        ui.mEmbed.textContent = "-";
-        ui.mTavily.textContent = "-";
-      }
-    }
+<script>
+// ── Tab switching ──────────────────────────────────────────────────────────
+const tabs = document.querySelectorAll(".tab-btn");
+const panels = document.querySelectorAll(".tab-panel");
+tabs.forEach(btn => {
+  btn.addEventListener("click", () => {
+    tabs.forEach(b => b.classList.remove("active"));
+    panels.forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+    if (btn.dataset.tab === "map" && !mapInitialized) initMap();
+    if (btn.dataset.tab === "stats" && !statsLoaded) loadStats();
+  });
+});
 
-    async function loadDesertSummary() {
-      try {
-        const d = await fetchJson("/desert");
-        renderDesertTable(Array.isArray(d.desert_regions) ? d.desert_regions : []);
-      } catch (e) {
-        ui.desertTableBody.innerHTML = "<tr><td colspan='6' class='flag'>Error: " + escapeHtml(e.message) + "</td></tr>";
-      }
-    }
+// ── Helpers ────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+async function fetchJson(url, opts={}) {
+  const r = await fetch(url, opts);
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || d.response || "HTTP " + r.status);
+  return d;
+}
 
-    async function loadMapData() {
-      try {
-        const m = await fetchJson("/map");
-        const regions = [];
-        for (const f of (m.features || [])) {
-          const p = f.properties || {};
-          const c = (f.geometry && f.geometry.coordinates) ? f.geometry.coordinates : [null, null];
-          regions.push({
-            pin: p.pin,
-            city: p.city,
-            state: p.state,
-            missing_specialties: p.missing_specialties || [],
-            facility_count: p.facility_count,
-            lat: c[1],
-            lon: c[0],
-          });
-        }
-        renderDesertTable(regions);
-      } catch (e) {
-        ui.desertTableBody.innerHTML = "<tr><td colspan='6' class='flag'>Error: " + escapeHtml(e.message) + "</td></tr>";
-      }
-    }
+// ── System health ──────────────────────────────────────────────────────────
+async function loadHealth() {
+  try {
+    const h = await fetchJson("/health");
+    document.getElementById("sys-dot").classList.add("ok");
+    document.getElementById("sys-line").textContent = "System online · " + (h.llm_backend || "local");
+    document.getElementById("m-backend").textContent = h.llm_backend || "—";
+    document.getElementById("m-model").textContent = h.chat_model || "heuristic";
+    document.getElementById("m-embed").textContent = h.embeddings || "—";
+    document.getElementById("m-tavily").textContent = h.tavily_configured ? "✓ Enabled" : "× Disabled";
+    document.getElementById("m-datasource").textContent = (h.databricks?.configured ? "Databricks Unity Catalog" : "Local Excel") + (h.data_source ? " · " + h.data_source : "");
+  } catch {
+    document.getElementById("sys-line").textContent = "Health check failed";
+  }
+}
+loadHealth();
 
-    document.getElementById("go").addEventListener("click", runQuery);
-    document.getElementById("clear").addEventListener("click", () => {
-      ui.q.value = "";
-      ui.answer.textContent = "Cleared.";
-      ui.trustScore.textContent = "-";
-      ui.flagsCount.textContent = "-";
-      ui.confidenceScore.textContent = "-";
-      ui.confidenceBand.textContent = "-";
-      ui.trustFlags.innerHTML = "<li class='muted-sm'>No trust output yet.</li>";
-      ui.reasonCodes.innerHTML = "<li class='muted-sm'>Reason codes will appear after inference.</li>";
-      ui.cot.innerHTML = "<li class='muted-sm'>No steps yet.</li>";
-      ui.citations.innerHTML = "<p class='muted-sm'>Evidence snippets will appear here to justify recommendations.</p>";
+// ── Trust gauge ────────────────────────────────────────────────────────────
+function setGauge(score) {
+  const arc = document.getElementById("gauge-arc");
+  const txt = document.getElementById("gauge-text");
+  const total = 172;
+  const offset = total - (score ?? 0) * total;
+  arc.style.strokeDashoffset = isNaN(offset) ? total : offset;
+  txt.textContent = (score != null) ? score.toFixed(2) : "—";
+}
+
+// ── Render query response ──────────────────────────────────────────────────
+function renderResponse(data) {
+  // Answer
+  document.getElementById("answer").textContent = data.response || "(No response)";
+
+  // Intent tag
+  const tag = document.getElementById("intent-tag");
+  tag.textContent = data.intent || "—";
+
+  // Gauge
+  setGauge(data.confidence_score);
+  document.getElementById("gauge-band").textContent = data.confidence_band || "—";
+
+  // Trust
+  const ts = data.trust_score;
+  document.getElementById("trust-score").textContent = ts != null ? ts.toFixed(3) : "—";
+
+  // Flags
+  const flags = Array.isArray(data.trust_flags) ? data.trust_flags : [];
+  document.getElementById("flags-count").textContent = flags.length;
+  const flagsEl = document.getElementById("trust-flags");
+  if (!flags.length) {
+    flagsEl.innerHTML = "<div class='flag-item ok'>No contradictions detected</div>";
+  } else {
+    flagsEl.innerHTML = flags.map(f => `<div class='flag-item bad'>${esc(f)}</div>`).join("");
+  }
+
+  // Confidence interval bar
+  const ci = data.confidence_interval;
+  if (ci && ci.lower != null) {
+    document.getElementById("ci-wrap").style.display = "";
+    document.getElementById("ci-fill").style.width = (ci.estimate * 100) + "%";
+    document.getElementById("ci-marker").style.left = (ci.estimate * 100) + "%";
+    document.getElementById("ci-lo").textContent = ci.lower.toFixed(3);
+    document.getElementById("ci-hi").textContent = ci.upper.toFixed(3);
+  }
+
+  // Reason codes
+  const codes = Array.isArray(data.reason_codes) ? data.reason_codes : [];
+  document.getElementById("reason-codes").innerHTML = codes.map(c => `<span class="code-tag">${esc(c)}</span>`).join("");
+
+  // Chain of thought
+  const steps = Array.isArray(data.chain_of_thought) ? data.chain_of_thought : [];
+  const cot = document.getElementById("cot");
+  cot.innerHTML = !steps.length
+    ? "<li style='color:var(--muted)'>No trace available.</li>"
+    : steps.map(s => `<li>${esc(s)}</li>`).join("");
+
+  // Citations
+  const cites = Array.isArray(data.source_citations) ? data.source_citations : [];
+  const citEl = document.getElementById("citations");
+  if (!cites.length) {
+    citEl.innerHTML = "<p style='color:var(--muted);font-size:.83rem'>No evidence snippets returned.</p>";
+  } else {
+    citEl.innerHTML = cites.map(c => `
+      <div class='cite-card'>
+        <div><span class='cite-name'>${esc(c.facility_name||"Unknown")}</span>
+        <span class='cite-pin'>PIN ${esc(c.pin||"—")}</span></div>
+        <div class='cite-text'>${esc(c.evidence_snippet||c.trust_evidence_snippet||"—")}</div>
+      </div>`).join("");
+  }
+}
+
+// ── Run query ──────────────────────────────────────────────────────────────
+async function runQuery() {
+  const msg = document.getElementById("q").value.trim();
+  if (!msg) return;
+  const overlay = document.getElementById("query-loading");
+  const btn = document.getElementById("btn-run");
+  overlay.classList.add("show");
+  btn.disabled = true;
+  btn.textContent = "Running…";
+  try {
+    const data = await fetchJson("/chat", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({message: msg}),
     });
+    renderResponse(data);
+  } catch(e) {
+    document.getElementById("answer").textContent = "Error: " + e.message;
+  } finally {
+    overlay.classList.remove("show");
+    btn.disabled = false;
+    btn.textContent = "Run Query";
+  }
+}
 
-    document.querySelectorAll(".quick").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        ui.q.value = btn.textContent;
-        runQuery();
+document.getElementById("btn-run").addEventListener("click", runQuery);
+document.getElementById("q").addEventListener("keydown", e => { if(e.key==="Enter" && e.ctrlKey) runQuery(); });
+document.getElementById("btn-clear").addEventListener("click", () => {
+  document.getElementById("q").value = "";
+  document.getElementById("answer").textContent = "Cleared.";
+  setGauge(null);
+  document.getElementById("trust-flags").innerHTML = "";
+  document.getElementById("reason-codes").innerHTML = "";
+  document.getElementById("cot").innerHTML = "<li>No steps yet.</li>";
+  document.getElementById("citations").innerHTML = "<p style='color:var(--muted);font-size:.84rem'>Evidence snippets appear here after a query.</p>";
+});
+document.querySelectorAll("#panel-query .quick-btn").forEach(b => {
+  b.addEventListener("click", () => { document.getElementById("q").value = b.textContent; runQuery(); });
+});
+
+// ── Audit ──────────────────────────────────────────────────────────────────
+async function runAudit() {
+  const name = document.getElementById("audit-name").value.trim();
+  if (!name) return;
+  const overlay = document.getElementById("audit-loading");
+  const btn = document.getElementById("btn-audit");
+  overlay.classList.add("show"); btn.disabled = true; btn.textContent = "Auditing…";
+
+  try {
+    const data = await fetchJson("/audit", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({facility_name: name}),
+    });
+    const ar = data.audit_result || {};
+
+    // Confidence metrics
+    document.getElementById("a-conf").textContent = data.confidence_score?.toFixed(3) ?? "—";
+    document.getElementById("a-band").textContent = data.confidence_band || "—";
+    const ci = data.confidence_interval || {};
+    document.getElementById("a-ci-lo").textContent = ci.lower?.toFixed(3) ?? "—";
+    document.getElementById("a-ci-hi").textContent = ci.upper?.toFixed(3) ?? "—";
+
+    // Capability pills
+    const capsEl = document.getElementById("audit-caps");
+    const claimed = ar.claimed || [];
+    const verified = ar.verified || [];
+    const missing = ar.missing || [];
+    if (!claimed.length) {
+      capsEl.innerHTML = "<p style='color:var(--muted);font-size:.83rem'>No capabilities extracted.</p>";
+    } else {
+      const verifiedSet = new Set(verified);
+      const missingSet = new Set(missing);
+      capsEl.innerHTML = "<div style='display:flex;flex-wrap:wrap;gap:6px'>" +
+        claimed.map(c => {
+          if (verifiedSet.has(c)) return `<span class='audit-pill pill-ok'>✓ ${esc(c)}</span>`;
+          if (missingSet.has(c)) return `<span class='audit-pill pill-bad'>⚑ ${esc(c)}</span>`;
+          return `<span class='audit-pill pill-warn'>? ${esc(c)}</span>`;
+        }).join("") + "</div>";
+    }
+
+    // Audit meta
+    document.getElementById("audit-meta").style.display = "";
+    document.getElementById("a-doctors").textContent = ar.num_doctors ?? "—";
+    document.getElementById("a-beds").textContent = ar.bed_capacity ?? "—";
+    document.getElementById("a-ratio").textContent = ar.verification_ratio != null ? (ar.verification_ratio * 100).toFixed(0) + "%" : "—";
+    document.getElementById("a-alts").textContent = (ar.alternatives||[]).length || "—";
+
+    // CoT
+    const steps = data.chain_of_thought || [];
+    document.getElementById("audit-cot").innerHTML = steps.length
+      ? steps.map(s=>`<li>${esc(s)}</li>`).join("")
+      : "<li style='color:var(--muted)'>No trace.</li>";
+
+    // Citations
+    const cites = data.source_citations || [];
+    document.getElementById("audit-cites").innerHTML = cites.map(c => `
+      <div class='cite-card'>
+        <div><span class='cite-name'>${esc(c.facility_name||"Unknown")}</span>
+        <span class='cite-pin'>PIN ${esc(c.pin||"—")}</span></div>
+        <div class='cite-text'>${esc(c.evidence_snippet||"—")}</div>
+      </div>`).join("");
+
+  } catch(e) {
+    document.getElementById("audit-caps").innerHTML = `<p style='color:var(--bad)'>Error: ${esc(e.message)}</p>`;
+  } finally {
+    overlay.classList.remove("show"); btn.disabled = false; btn.textContent = "Audit";
+  }
+}
+document.getElementById("btn-audit").addEventListener("click", runAudit);
+document.getElementById("audit-name").addEventListener("keydown", e => { if(e.key==="Enter") runAudit(); });
+
+// ── Leaflet Map ────────────────────────────────────────────────────────────
+let mapInitialized = false;
+let leafletMap, desertLayer, facilityLayer;
+
+function priorityColor(p) {
+  if (p === "critical") return "#ef4444";
+  if (p === "high")     return "#f59e0b";
+  if (p === "medium")   return "#eab308";
+  return "#22c55e";
+}
+
+function initMap() {
+  mapInitialized = true;
+  leafletMap = L.map("leaflet-map", {
+    center: [20.5937, 78.9629],
+    zoom: 5,
+    zoomControl: true,
+  });
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors",
+    maxZoom: 18,
+  }).addTo(leafletMap);
+
+  // Legend
+  const legend = L.control({position: "bottomright"});
+  legend.onAdd = () => {
+    const div = L.DomUtil.create("div", "legend-box");
+    div.innerHTML = `
+      <b style="color:#f0f4ff;font-size:.8rem;display:block;margin-bottom:6px">Desert Priority</b>
+      <div class="leg-row"><span class="leg-dot" style="background:#ef4444"></span>Critical</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#f59e0b"></span>High</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#eab308"></span>Medium</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#22c55e"></span>Low / Facility</div>`;
+    return div;
+  };
+  legend.addTo(leafletMap);
+}
+
+document.getElementById("btn-load-deserts").addEventListener("click", async () => {
+  if (!mapInitialized) initMap();
+  const status = document.getElementById("map-status");
+  status.textContent = "Loading desert regions…";
+  if (desertLayer) { leafletMap.removeLayer(desertLayer); desertLayer = null; }
+
+  try {
+    const geo = await fetchJson("/map");
+    desertLayer = L.layerGroup();
+    let count = 0;
+    for (const f of (geo.features || [])) {
+      const p = f.properties || {};
+      const [lon, lat] = f.geometry.coordinates;
+      const color = priorityColor(p.intervention_priority);
+      const si = p.severity_interval || {};
+      const missing = (p.missing_specialties || []).join(", ") || "None";
+      const circle = L.circleMarker([lat, lon], {
+        radius: 6 + (p.severity_index || 0) * 8,
+        fillColor: color, color: color,
+        fillOpacity: 0.75, weight: 1.5,
       });
+      circle.bindPopup(`
+        <b style="color:#111">${p.city || "—"}, ${p.state || "—"}</b><br/>
+        <span style="font-size:12px">PIN: ${p.pin || "—"}</span><br/>
+        Priority: <b>${p.intervention_priority || "—"}</b><br/>
+        Severity: ${((p.severity_index||0)*100).toFixed(0)}%
+        [${(si.lower||0)*100|0}%–${(si.upper||0)*100|0}%]<br/>
+        Facilities: ${p.facility_count || 0}<br/>
+        Missing: <span style="color:#dc2626">${missing}</span>
+      `);
+      desertLayer.addLayer(circle);
+      count++;
+    }
+    desertLayer.addTo(leafletMap);
+    status.textContent = `Loaded ${count} desert regions.`;
+  } catch(e) {
+    status.textContent = "Error: " + e.message;
+  }
+});
+
+document.getElementById("btn-load-facilities").addEventListener("click", async () => {
+  if (!mapInitialized) initMap();
+  const status = document.getElementById("map-status");
+  status.textContent = "Loading facility markers (up to 2000)…";
+  if (facilityLayer) { leafletMap.removeLayer(facilityLayer); facilityLayer = null; }
+
+  try {
+    const geo = await fetchJson("/facilities/geojson?limit=2000");
+    const cluster = L.markerClusterGroup({
+      maxClusterRadius: 40,
+      iconCreateFunction: cluster => L.divIcon({
+        html: `<div style="background:#1d4ed8;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid #3b82f6">${cluster.getChildCount()}</div>`,
+        iconSize: [32,32], iconAnchor: [16,16],
+      }),
     });
+    for (const f of (geo.features || [])) {
+      const p = f.properties || {};
+      const [lon, lat] = f.geometry.coordinates;
+      const comp = (p.completeness || 0);
+      const dotColor = comp >= 0.7 ? "#22c55e" : comp >= 0.4 ? "#f59e0b" : "#ef4444";
+      const marker = L.circleMarker([lat, lon], {
+        radius: 4, fillColor: dotColor, color: "#0f172a",
+        fillOpacity: 0.85, weight: 1,
+      });
+      marker.bindPopup(`
+        <b style="color:#111">${p.name || "—"}</b><br/>
+        <span style="font-size:12px">${p.city||""}, ${p.state||""}</span><br/>
+        Type: ${p.type || "—"} · PIN: ${p.pin||"—"}<br/>
+        Completeness: ${(comp*100).toFixed(0)}%`);
+      cluster.addLayer(marker);
+    }
+    facilityLayer = cluster;
+    leafletMap.addLayer(facilityLayer);
+    status.textContent = `Loaded ${geo.features?.length || 0} facility markers.`;
+  } catch(e) {
+    status.textContent = "Error: " + e.message;
+  }
+});
 
-    document.getElementById("btn-desert").addEventListener("click", loadDesertSummary);
-    document.getElementById("btn-map").addEventListener("click", loadMapData);
-    document.getElementById("btn-audit").addEventListener("click", runAudit);
+document.getElementById("btn-clear-map").addEventListener("click", () => {
+  if (desertLayer)   { leafletMap?.removeLayer(desertLayer); desertLayer = null; }
+  if (facilityLayer) { leafletMap?.removeLayer(facilityLayer); facilityLayer = null; }
+  document.getElementById("map-status").textContent = "Map cleared.";
+});
 
-    loadHealth();
-  </script>
+// ── Dataset Stats ──────────────────────────────────────────────────────────
+let statsLoaded = false;
+async function loadStats() {
+  statsLoaded = true;
+  try {
+    const s = await fetchJson("/stats");
+    document.getElementById("st-total").textContent = s.total_facilities?.toLocaleString() || "—";
+    document.getElementById("st-states").textContent = s.states_covered || "—";
+    document.getElementById("st-cities").textContent = s.cities_covered?.toLocaleString() || "—";
+    document.getElementById("st-geo").textContent = s.facilities_with_coords?.toLocaleString() + " (" + (s.geo_coverage_pct||0) + "%)";
+    document.getElementById("st-comp").textContent = ((s.overall_completeness||0)*100).toFixed(1) + "%";
+    document.getElementById("st-note").textContent = s.data_quality_note || "";
+
+    // Completeness distribution
+    const dist = s.completeness_distribution || {};
+    const total = s.total_facilities || 1;
+    document.getElementById("comp-dist").innerHTML = [
+      {label:"High (≥70%)", count:dist.high||0, color:"#22c55e"},
+      {label:"Medium (40–70%)", count:dist.medium||0, color:"#f59e0b"},
+      {label:"Low (<40%)", count:dist.low||0, color:"#ef4444"},
+    ].map(d => {
+      const pct = Math.round((d.count/total)*100);
+      return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:.79rem;color:var(--muted)">
+          <span>${d.label}</span><span>${d.count.toLocaleString()} (${pct}%)</span>
+        </div>
+        <div class="fill-bar"><div class="fill-bar-inner" style="width:${pct}%;background:${d.color}"></div></div>
+      </div>`;
+    }).join("");
+
+    // Field fill rates
+    const fills = s.field_fill_rates || {};
+    document.getElementById("fill-rates").innerHTML = Object.entries(fills).map(([k,v]) => {
+      const pct = Math.round(v*100);
+      return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:.79rem;color:var(--muted)">
+          <span>${k}</span><span>${pct}%</span>
+        </div>
+        <div class="fill-bar"><div class="fill-bar-inner" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join("");
+  } catch(e) {
+    document.getElementById("st-total").textContent = "Error";
+  }
+}
+</script>
 </body>
 </html>

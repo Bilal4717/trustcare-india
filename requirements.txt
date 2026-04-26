@@ -1,22 +1,40 @@
+# ── Web framework ──────────────────────────────────────────────────────────────
 flask>=3.0
 python-dotenv>=1.0
+
+# ── Data processing ────────────────────────────────────────────────────────────
 pandas>=2.0
 openpyxl>=3.1
 numpy>=1.26
+
+# ── LangChain / LangGraph core ────────────────────────────────────────────────
 langchain-core>=0.3
 langchain-community>=0.3
 langgraph>=0.2
-faiss-cpu>=1.8
 pydantic>=2.0
+
+# ── Vector store (local FAISS fallback) ───────────────────────────────────────
+faiss-cpu>=1.8
+
+# ── Observability ─────────────────────────────────────────────────────────────
 mlflow>=3.0.0
+
+# ── Web search enrichment ─────────────────────────────────────────────────────
 tavily-python>=0.5.0
 
-# Gemini (Google AI Studio) — primary recommended path
+# ── LLM providers (choose one or more) ───────────────────────────────────────
+# Google Gemini — primary recommended path (free tier available)
 langchain-google-genai>=2.0.0
 
-# Local-only fallback (no Gemini/OpenAI)
+# OpenAI — optional cloud alternative
+langchain-openai>=0.2
+
+# Local HuggingFace fallback (no cloud API key required)
 sentence-transformers>=3.0.0
 torch>=2.1.0
 
-# Optional cloud alternative
-langchain-openai>=0.2
+# ── Databricks integration (install for Databricks-native stack) ──────────────
+# Uncomment these when running against a Databricks workspace:
+# databricks-sdk>=0.20.0
+# databricks-sql-connector>=3.0.0
+# mlflow[databricks]>=3.0.0

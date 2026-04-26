@@ -3,99 +3,494 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Serving a Nation - Home</title>
+  <title>TrustCare India — Serving a Nation</title>
   <style>
-    :root{
-      --bg:#0a1120;
-      --bg2:#0f1b34;
-      --panel:#111d37;
-      --text:#eaf1ff;
-      --muted:#9eb1d8;
-      --accent:#5d9bff;
-      --border:#2b4169;
+    :root {
+      --bg:       #07090f;
+      --bg2:      #0d1426;
+      --panel:    #111827;
+      --panel2:   #151e30;
+      --text:     #f0f4ff;
+      --muted:    #8b9fc7;
+      --accent:   #3b82f6;
+      --accent2:  #60a5fa;
+      --red:      #ef4444;
+      --green:    #22c55e;
+      --orange:   #f59e0b;
+      --border:   #1e2d4a;
+      --border2:  #253350;
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      color:var(--text);
-      font-family:Inter,Segoe UI,system-ui,sans-serif;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── typography ── */
+    h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.12; letter-spacing: -0.5px; }
+    h2 { font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.2; }
+    h3 { font-size: 1.05rem; font-weight: 600; }
+    p  { color: var(--muted); font-size: 0.97rem; }
+
+    /* ── layout ── */
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+
+    /* ── nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7, 9, 15, 0.82);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+    }
+    .nav-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; text-decoration: none; color: var(--text); }
+    .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #60a5fa); box-shadow: 0 0 0 5px rgba(59,130,246,.2); }
+    .nav-badge { font-size: .75rem; color: var(--muted); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; background: var(--panel); }
+    .nav-links { display: flex; gap: 8px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 10px; text-decoration: none; font-size: .88rem; font-weight: 500; transition: all .18s; cursor: pointer; border: none; font-family: inherit; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border2); background: var(--panel); }
+    .btn-primary { background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff; font-weight: 700; box-shadow: 0 0 0 1px rgba(59,130,246,.4), 0 4px 20px rgba(59,130,246,.25); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(59,130,246,.6), 0 8px 28px rgba(59,130,246,.35); }
+
+    /* ── hero ── */
+    .hero-section {
+      position: relative; overflow: hidden;
+      padding: 90px 0 80px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; pointer-events: none;
       background:
-        radial-gradient(1000px 450px at 10% -10%, rgba(93,155,255,.22), transparent 55%),
-        linear-gradient(180deg,var(--bg),var(--bg2));
+        radial-gradient(900px 600px at 60% -20%, rgba(59,130,246,.18), transparent 65%),
+        radial-gradient(500px 400px at -5% 80%, rgba(139,92,246,.12), transparent 60%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
     }
-    .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 42px}
-    .nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-    .brand{font-weight:700}
-    .chip{font-size:.8rem;color:var(--muted);border:1px solid var(--border);padding:6px 10px;border-radius:999px}
-    .hero{
-      border:1px solid var(--border);
-      border-radius:16px;
-      background:linear-gradient(135deg,#122447,#162b4f 60%,#132443);
-      padding:22px;
+    .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; position: relative; }
+    .hero-eyebrow { display: inline-flex; align-items: center; gap: 8px; background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.3); color: var(--accent2); font-size: .8rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; margin-bottom: 20px; letter-spacing: .3px; }
+    .hero-eyebrow svg { width: 12px; height: 12px; fill: currentColor; }
+    .hero h1 { margin-bottom: 20px; }
+    .hero h1 .gradient { background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #34d399 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { font-size: 1.05rem; line-height: 1.65; max-width: 520px; margin-bottom: 32px; }
+    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 36px; }
+    .stat-chip { background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .stat-chip .num { font-size: 1.6rem; font-weight: 800; color: var(--accent2); line-height: 1; }
+    .stat-chip .lbl { font-size: .75rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── India map visual ── */
+    .hero-visual { position: relative; }
+    .map-card {
+      background: linear-gradient(135deg, #0f1c35 0%, #111827 60%, #0d1630 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 0 0 1px rgba(59,130,246,.08), 0 30px 80px rgba(0,0,0,.5);
+      position: relative; overflow: hidden;
     }
-    h1{margin:0 0 10px;font-size:clamp(1.4rem,3vw,2rem)}
-    p{margin:0;color:var(--muted);line-height:1.55}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
-    .card{
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:10px;
-      padding:12px;
+    .map-card::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(400px 400px at 70% 30%, rgba(59,130,246,.07), transparent);
     }
-    .card h3{margin:0 0 6px;font-size:.96rem}
-    .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-    a.btn{
-      text-decoration:none;
-      border:1px solid var(--border);
-      border-radius:9px;
-      padding:10px 14px;
-      color:var(--text);
-      background:#152746;
-      display:inline-block;
+    .map-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: relative; }
+    .map-title { font-size: .85rem; font-weight: 600; color: var(--text); }
+    .live-badge { display: flex; align-items: center; gap: 6px; font-size: .72rem; color: var(--green); }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+
+    /* SVG India map placeholder */
+    .india-svg-wrap { position: relative; height: 260px; }
+    .india-svg-wrap svg { width: 100%; height: 100%; }
+
+    .map-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: .73rem; color: var(--muted); }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+    /* ── section ── */
+    section { padding: 72px 0; border-top: 1px solid var(--border); }
+    .section-label { font-size: .78rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+    .section-title { margin-bottom: 12px; }
+    .section-sub { max-width: 580px; }
+
+    /* ── features grid ── */
+    .features-header { max-width: 640px; margin-bottom: 48px; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .feature-card {
+      background: linear-gradient(145deg, var(--panel), var(--panel2));
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
     }
-    a.btn.primary{
-      background:linear-gradient(180deg,#73b0ff,var(--accent));
-      color:#08152b;
-      font-weight:700;
-      border-color:#4a7fd4;
+    .feature-card:hover { transform: translateY(-3px); border-color: var(--border2); box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+    .feature-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 1.2rem; }
+    .icon-blue  { background: rgba(59,130,246,.15); border: 1px solid rgba(59,130,246,.25); }
+    .icon-purple{ background: rgba(139,92,246,.15); border: 1px solid rgba(139,92,246,.25); }
+    .icon-green { background: rgba(34,197,94,.15);  border: 1px solid rgba(34,197,94,.25);  }
+    .icon-orange{ background: rgba(245,158,11,.15); border: 1px solid rgba(245,158,11,.25); }
+    .icon-red   { background: rgba(239,68,68,.15);  border: 1px solid rgba(239,68,68,.25);  }
+    .icon-teal  { background: rgba(20,184,166,.15); border: 1px solid rgba(20,184,166,.25); }
+    .feature-card h3 { margin-bottom: 8px; }
+    .feature-card p { font-size: .87rem; }
+
+    /* ── how it works ── */
+    .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; counter-reset: step; }
+    .how-step { padding: 28px; border-right: 1px solid var(--border); counter-increment: step; position: relative; }
+    .how-step:last-child { border-right: none; }
+    .step-num { font-size: 2.5rem; font-weight: 900; color: rgba(59,130,246,.18); line-height: 1; margin-bottom: 12px; }
+    .step-num::before { content: "0" counter(step); }
+    .how-step h3 { margin-bottom: 8px; }
+
+    /* ── tech stack ── */
+    .tech-section { padding: 52px 0; }
+    .tech-label { font-size: .78rem; color: var(--muted); text-align: center; margin-bottom: 24px; letter-spacing: 1px; text-transform: uppercase; }
+    .tech-row { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .tech-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 16px; font-size: .84rem; font-weight: 500; color: var(--muted);
+      transition: border-color .2s, color .2s;
     }
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .tech-chip:hover { border-color: var(--border2); color: var(--text); }
+    .tech-chip .icon { font-size: 1.1rem; }
+
+    /* ── impact section ── */
+    .impact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .impact-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .impact-num { font-size: 2.8rem; font-weight: 900; line-height: 1; margin-bottom: 6px; }
+    .impact-num.blue   { color: var(--accent2); }
+    .impact-num.red    { color: #fb7185; }
+    .impact-num.green  { color: var(--green); }
+    .impact-num.orange { color: var(--orange); }
+
+    /* ── CTA section ── */
+    .cta-section { text-align: center; padding: 80px 0; }
+    .cta-section h2 { margin-bottom: 16px; }
+    .cta-section p  { max-width: 520px; margin: 0 auto 32px; }
+    .cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── footer ── */
+    footer {
+      border-top: 1px solid var(--border); padding: 24px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 10px;
+    }
+    footer p { font-size: .82rem; }
+    .footer-links { display: flex; gap: 16px; }
+    .footer-links a { color: var(--muted); text-decoration: none; font-size: .82rem; }
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── scroll animation ── */
+    .fade-up { opacity: 0; transform: translateY(24px); transition: opacity .5s, transform .5s; }
+    .fade-up.visible { opacity: 1; transform: none; }
+
+    @media (max-width: 900px) {
+      .hero-grid, .impact-grid { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .how-grid { grid-template-columns: 1fr; }
+      .how-step { border-right: none; border-bottom: 1px solid var(--border); }
+      .how-step:last-child { border-bottom: none; }
+    }
+    @media (max-width: 600px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="nav">
-      <div class="brand">Serving a Nation</div>
-      <div class="chip">Agentic Healthcare Intelligence</div>
+
+<!-- ── Navigation ── -->
+<nav>
+  <div class="wrap nav-inner">
+    <a class="logo" href="/">
+      <span class="logo-dot"></span>
+      TrustCare India
+    </a>
+    <div class="nav-links">
+      <span class="nav-badge">MIT Hackathon · Databricks Challenge</span>
+      <a class="btn btn-ghost" href="/onboarding">Docs</a>
+      <a class="btn btn-primary" href="/app">Open App →</a>
     </div>
-
-    <section class="hero">
-      <h1>Find the right care faster, with transparent healthcare intelligence.</h1>
-      <p>
-        Serving a Nation helps families, NGOs, and planners discover verified healthcare capabilities
-        across 10k+ Indian facilities, detect trust gaps in claims, and identify high-risk specialty deserts.
-      </p>
-
-      <div class="grid">
-        <div class="card">
-          <h3>Discovery</h3>
-          <p>Search by location + specialty + procedure + equipment in one query.</p>
-        </div>
-        <div class="card">
-          <h3>Verification</h3>
-          <p>Audit capability claims and highlight contradictions with evidence snippets.</p>
-        </div>
-        <div class="card">
-          <h3>Social Impact</h3>
-          <p>Map underserved regions by PIN/city/state to guide intervention planning.</p>
-        </div>
-      </div>
-
-      <div class="cta">
-        <a class="btn primary" href="/onboarding">Start onboarding</a>
-        <a class="btn" href="/app">Skip to app</a>
-      </div>
-    </section>
   </div>
+</nav>
+
+<!-- ── Hero ── -->
+<div class="hero-section">
+  <div class="hero-bg"></div>
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero fade-up">
+        <div class="hero-eyebrow">
+          <svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="5"/></svg>
+          Serving a Nation · 1.4 Billion Lives
+        </div>
+        <h1>
+          Agentic Healthcare<br/>
+          Intelligence for<br/>
+          <span class="gradient">India</span>
+        </h1>
+        <p>
+          Turn 10,000+ messy facility records into a living intelligence network.
+          Find the right care, verify capability claims, and map the healthcare deserts
+          that decide lifespans.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="/app">Launch Workspace →</a>
+          <a class="btn btn-ghost" href="/onboarding">How it works</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-chip fade-up">
+            <div class="num" id="stat-facilities">10k+</div>
+            <div class="lbl">Medical Facilities</div>
+          </div>
+          <div class="stat-chip fade-up">
+            <div class="num" id="stat-states">28+</div>
+            <div class="lbl">States Covered</div>
+          </div>
+          <div class="stat-chip fade-up">
+            <div class="num">8</div>
+            <div class="lbl">Critical Specialties Tracked</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual fade-up">
+        <div class="map-card">
+          <div class="map-header">
+            <span class="map-title">Crisis Desert Map — India</span>
+            <span class="live-badge"><span class="live-dot"></span>Live Analysis</span>
+          </div>
+          <!-- Stylised India SVG outline -->
+          <div class="india-svg-wrap">
+            <svg viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- India outline approximate path -->
+              <path d="M120 30 L145 20 L175 25 L200 40 L215 55 L220 70
+                       L230 75 L245 68 L255 80 L248 95 L255 110 L260 130
+                       L255 150 L265 170 L270 190 L260 210 L248 225
+                       L235 240 L220 255 L205 268 L190 278 L178 288
+                       L168 295 L160 298 L152 290 L145 278 L138 265
+                       L128 250 L118 238 L105 225 L95 210 L88 195
+                       L82 178 L78 162 L72 148 L68 132 L72 118
+                       L78 105 L85 90 L95 75 L105 60 L115 45 Z"
+                stroke="rgba(59,130,246,0.35)" stroke-width="1.5" fill="rgba(59,130,246,0.06)"/>
+              <!-- Desert dots — critical -->
+              <circle cx="110" cy="150" r="7" fill="#ef4444" opacity=".8"/>
+              <circle cx="190" cy="210" r="6" fill="#ef4444" opacity=".75"/>
+              <circle cx="145" cy="95"  r="5" fill="#ef4444" opacity=".7"/>
+              <!-- High priority -->
+              <circle cx="168" cy="170" r="5" fill="#f59e0b" opacity=".8"/>
+              <circle cx="210" cy="140" r="4" fill="#f59e0b" opacity=".75"/>
+              <circle cx="128" cy="200" r="4" fill="#f59e0b" opacity=".7"/>
+              <!-- Medium -->
+              <circle cx="155" cy="130" r="4" fill="#eab308" opacity=".7"/>
+              <circle cx="230" cy="170" r="3" fill="#eab308" opacity=".65"/>
+              <!-- Low / facility markers -->
+              <circle cx="160" cy="158" r="3" fill="#22c55e" opacity=".8"/>
+              <circle cx="175" cy="100" r="2.5" fill="#22c55e" opacity=".7"/>
+              <circle cx="135" cy="240" r="2.5" fill="#22c55e" opacity=".7"/>
+              <!-- Pulse rings -->
+              <circle cx="110" cy="150" r="14" stroke="#ef4444" stroke-width="1" opacity=".3"/>
+              <circle cx="190" cy="210" r="12" stroke="#ef4444" stroke-width="1" opacity=".25"/>
+              <!-- Grid lines -->
+              <line x1="70" y1="100" x2="270" y2="100" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              <line x1="70" y1="150" x2="270" y2="150" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              <line x1="70" y1="200" x2="270" y2="200" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              <line x1="130" y1="20" x2="130" y2="300" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              <line x1="180" y1="20" x2="180" y2="300" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              <line x1="230" y1="20" x2="230" y2="300" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+            </svg>
+          </div>
+          <div class="map-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Critical Desert</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>High Priority</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#eab308"></span>Medium</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Facility Present</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Core Features ── -->
+<section>
+  <div class="wrap">
+    <div class="features-header fade-up">
+      <div class="section-label">Core Capabilities</div>
+      <h2 class="section-title">Everything needed to navigate Indian healthcare</h2>
+      <p class="section-sub">
+        A multi-agent reasoning system that sifts 10,000+ unstructured facility records
+        to answer high-stakes care questions with verifiable evidence.
+      </p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card fade-up">
+        <div class="feature-icon icon-blue">🔍</div>
+        <h3>Multi-Attribute Discovery</h3>
+        <p>Search by location, procedure, equipment, specialty, and staffing type simultaneously — far beyond keyword search.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon icon-red">🛡️</div>
+        <h3>Capability Audit</h3>
+        <p>Verify whether a hospital truly has a functional ICU, not just one listed on paper. Row-level evidence snippets justify every claim.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon icon-orange">⚠️</div>
+        <h3>Trust Scorer</h3>
+        <p>Flag contradictions between claimed capabilities and reported equipment. Advanced Surgery with no Anesthesiologist? Flagged immediately.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon icon-purple">🗺️</div>
+        <h3>Desert Mapping</h3>
+        <p>Identify regions lacking oncology, dialysis, trauma surgery, and 5 other high-acuity specialties — by PIN code, city, and state.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon icon-green">📊</div>
+        <h3>Confidence Intervals</h3>
+        <p>Bootstrap statistical intervals quantify uncertainty for every conclusion. Sparse data produces wider intervals — honest about what we know.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <div class="feature-icon icon-teal">🔗</div>
+        <h3>Agentic Traceability</h3>
+        <p>Every recommendation cites the exact sentence that justifies it. Full chain-of-thought reasoning visualized step by step via MLflow 3.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ── -->
+<section>
+  <div class="wrap">
+    <div class="features-header fade-up" style="margin-bottom:40px">
+      <div class="section-label">How It Works</div>
+      <h2 class="section-title">From messy records to life-saving insight</h2>
+    </div>
+    <div class="how-grid fade-up">
+      <div class="how-step">
+        <div class="step-num"></div>
+        <h3>Intelligent Document Parsing</h3>
+        <p>Databricks processes 10,000+ free-form facility notes — equipment logs, 24/7 claims, specialty listings — and embeds them into a Mosaic AI Vector Search index.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num"></div>
+        <h3>Multi-Agent Reasoning</h3>
+        <p>A LangGraph pipeline orchestrates 8 specialized agents: intent detection, retrieval, auditing, trust scoring, desert finding, validation, and response building.</p>
+      </div>
+      <div class="how-step">
+        <div class="step-num"></div>
+        <h3>Verified, Cited Answers</h3>
+        <p>Every answer includes row-level evidence snippets, a trust score, confidence intervals, and a full reasoning trace — so planners and families can trust the output.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Impact Numbers ── -->
+<section>
+  <div class="wrap">
+    <div class="features-header fade-up">
+      <div class="section-label">Social Impact</div>
+      <h2 class="section-title">Built for equitable healthcare</h2>
+    </div>
+    <div class="impact-grid fade-up">
+      <div class="impact-card">
+        <div class="impact-num blue">70%</div>
+        <h3 style="margin-bottom:6px">Rural Population</h3>
+        <p>of India lives outside major cities — where healthcare access is a fragmented puzzle and discovery takes hours, not seconds.</p>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num red">8</div>
+        <h3 style="margin-bottom:6px">High-Acuity Specialties</h3>
+        <p>tracked per region: Oncology, Dialysis, Emergency Medicine, Cardiology, Neonatal, Trauma Surgery, Intensive Care, Neurology.</p>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num green">10k+</div>
+        <h3 style="margin-bottom:6px">Facilities Indexed</h3>
+        <p>across 28 states and union territories, with completeness scoring, trust flags, and geographic coordinates for map visualization.</p>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num orange">&lt;3s</div>
+        <h3 style="margin-bottom:6px">Discovery-to-Care Time</h3>
+        <p>Target query response time — down from hours of phone calls and guesswork for families in rural areas facing a medical emergency.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Tech Stack ── -->
+<div class="tech-section">
+  <div class="wrap">
+    <div class="tech-label">Powered by</div>
+    <div class="tech-row">
+      <span class="tech-chip"><span class="icon">🧱</span> Databricks Free Edition</span>
+      <span class="tech-chip"><span class="icon">🔍</span> Mosaic AI Vector Search</span>
+      <span class="tech-chip"><span class="icon">📈</span> MLflow 3 Tracing</span>
+      <span class="tech-chip"><span class="icon">🦙</span> Meta-Llama 3 · DBRX</span>
+      <span class="tech-chip"><span class="icon">🔗</span> LangGraph Agents</span>
+      <span class="tech-chip"><span class="icon">🗄️</span> Unity Catalog Delta</span>
+      <span class="tech-chip"><span class="icon">🌐</span> Tavily Web Search</span>
+      <span class="tech-chip"><span class="icon">💎</span> Gemini 2.5 Flash</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Final CTA ── -->
+<section class="cta-section">
+  <div class="wrap">
+    <div class="section-label" style="text-align:center">Ready to explore</div>
+    <h2>Find the care that saves lives</h2>
+    <p>
+      In a country of 1.4 billion people, near enough is not good enough.
+      TrustCare India turns a static list of 10,000 buildings into a living intelligence
+      network — one that knows where the help is, and where it still needs to go.
+    </p>
+    <div class="cta-buttons">
+      <a class="btn btn-primary" href="/onboarding">Start Onboarding →</a>
+      <a class="btn btn-ghost" href="/app">Skip to App</a>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <footer>
+    <p>TrustCare India · MIT Hackathon · Databricks Challenge · 2025</p>
+    <div class="footer-links">
+      <a href="/app">Workspace</a>
+      <a href="/onboarding">Guide</a>
+      <a href="/health">System Health</a>
+      <a href="/stats">Dataset Stats</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // Fade-in on scroll
+  const observer = new IntersectionObserver(
+    (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("visible"); }),
+    { threshold: 0.1 }
+  );
+  document.querySelectorAll(".fade-up").forEach(el => observer.observe(el));
+
+  // Live stats from /health
+  fetch("/health")
+    .then(r => r.json())
+    .then(h => {
+      const ds = h.dataset || {};
+      if (ds.total_facilities) {
+        document.getElementById("stat-facilities").textContent =
+          (ds.total_facilities >= 1000
+            ? Math.round(ds.total_facilities / 1000) + "k+"
+            : ds.total_facilities + "+");
+      }
+      if (ds.states_covered) {
+        document.getElementById("stat-states").textContent = ds.states_covered + "+";
+      }
+    })
+    .catch(() => {});
+</script>
 </body>
 </html>
