@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Serving a Nation - Intelligence Workspace</title>
+  <style>
+    :root {
+      --bg: #070707;
+      --bg-elev: #111111;
+      --bg-elev-2: #171717;
+      --text: #f5f5f5;
+      --muted: #b3b3b3;
+      --red: #e50914;
+      --red-soft: #ff3b47;
+      --ok: #2ec27e;
+      --warn: #ffb020;
+      --bad: #ff6b72;
+      --line: #2a2a2a;
+      --shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background:
+        radial-gradient(1000px 400px at 0% -10%, rgba(229, 9, 20, 0.15), transparent 55%),
+        linear-gradient(180deg, #080808 0%, #0f0f0f 100%);
+      color: var(--text);
+      line-height: 1.48;
+    }
+    .app-shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+    }
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10, 10, 10, 0.86);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .brand {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .brand-mark {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: linear-gradient(140deg, var(--red), #ff6a73);
+      box-shadow: 0 0 0 6px rgba(229, 9, 20, 0.22);
+    }
+    .menu {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .menu a {
+      text-decoration: none;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      background: #121212;
+    }
+    .menu a:hover {
+      color: var(--text);
+      border-color: #424242;
+    }
+    .status-chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: #131313;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      background: var(--warn);
+    }
+    .status-ok { background: var(--ok); }
+
+    .hero {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 24px;
+      background:
+        linear-gradient(180deg, rgba(229, 9, 20, 0.2), rgba(229, 9, 20, 0.03)),
+        linear-gradient(135deg, #151515 0%, #101010 100%);
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+    .hero h1 {
+      margin: 0 0 10px 0;
+      font-size: clamp(1.7rem, 3vw, 2.45rem);
+      line-height: 1.15;
+      letter-spacing: 0.2px;
+    }
+    .hero p {
+      margin: 0;
+      color: #cfcfcf;
+      max-width: 920px;
+      font-size: clamp(0.95rem, 1.8vw, 1.04rem);
+    }
+    .rubric {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .rubric span {
+      border: 1px solid #3b2023;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      color: #f6ced1;
+      background: rgba(229, 9, 20, 0.12);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 14px;
+    }
+    .card {
+      background: linear-gradient(180deg, var(--bg-elev), var(--bg-elev-2));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+      letter-spacing: 0.2px;
+    }
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 0.92rem;
+      color: #fafafa;
+    }
+    .muted-sm {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .feature {
+      border: 1px solid #292929;
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .workspace {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 14px;
+    }
+    .full { grid-column: 1 / -1; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    textarea, input {
+      width: 100%;
+      color: var(--text);
+      border: 1px solid #303030;
+      border-radius: 10px;
+      background: #0f0f0f;
+      padding: 10px;
+      font: inherit;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    button {
+      border: 1px solid #333;
+      border-radius: 10px;
+      background: #1b1b1b;
+      color: var(--text);
+      padding: 8px 12px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      border-color: #4a4a4a;
+      background: #232323;
+    }
+    button.primary {
+      background: linear-gradient(180deg, var(--red-soft), var(--red));
+      color: #fff;
+      border-color: #b70e18;
+      font-weight: 700;
+    }
+    button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .quick {
+      font-size: .82rem;
+      background: #1a1a1a;
+      color: #d6d6d6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .metric {
+      border: 1px solid #2c2c2c;
+      border-radius: 10px;
+      padding: 9px;
+      background: #141414;
+    }
+    .metric .k { font-size: .76rem; color: var(--muted); }
+    .metric .v { margin-top: 4px; font-size: 1.05rem; font-weight: 600; }
+    .list { margin: 0; padding-left: 18px; color: #d2d2d2; }
+    .list li { margin: 6px 0; }
+    .flag { color: var(--bad); }
+    .ok { color: var(--ok); }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #e8e8e8;
+      font-size: .83rem;
+      line-height: 1.42;
+    }
+    .cite {
+      border: 1px solid #2b2b2b;
+      border-radius: 10px;
+      background: #131313;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .cite b { color: #ffffff; }
+    .table-wrap { overflow: auto; }
+    .map-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .84rem;
+    }
+    .map-table th, .map-table td {
+      text-align: left;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 7px 5px;
+      vertical-align: top;
+    }
+    .map-table th { color: #dddddd; font-weight: 600; }
+
+    @media (max-width: 1100px) {
+      .layout, .workspace { grid-template-columns: 1fr; }
+      .feature-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        Serving a Nation
+      </div>
+      <nav class="menu">
+        <a href="/app">Workspace</a>
+        <a href="/onboarding">Onboarding</a>
+        <a href="/">Home</a>
+      </nav>
+      <span class="status-chip">
+        <span id="health-dot" class="status-dot"></span><span id="health-line">Checking system...</span>
+      </span>
+    </header>
+
+    <section class="hero">
+      <h1>Healthcare Intelligence Workspace</h1>
+      <p>
+        Query, verify, and map healthcare capabilities with explainable reasoning across 10k+ Indian facility records.
+        Built for fast decisions, transparent evidence, and planning impact.
+      </p>
+      <div class="rubric">
+        <span>Discovery & Verification (35%)</span>
+        <span>IDP Innovation (30%)</span>
+        <span>Social Impact (25%)</span>
+        <span>UX & Transparency (10%)</span>
+      </div>
+    </section>
+
+    <section class="layout">
+      <article class="card">
+        <h2>What you can do here</h2>
+        <div class="feature-grid">
+          <div class="feature">
+            <h3>Discover facilities</h3>
+            <p class="muted-sm">Search using multi-attribute needs: location, procedure, equipment, and specialty.</p>
+          </div>
+          <div class="feature">
+            <h3>Audit claims</h3>
+            <p class="muted-sm">Verify capability claims against evidence snippets from facility descriptions.</p>
+          </div>
+          <div class="feature">
+            <h3>Track deserts</h3>
+            <p class="muted-sm">Surface high-risk regions missing high-acuity specialties for policy and NGO action.</p>
+          </div>
+        </div>
+      </article>
+      <article class="card">
+        <h2>Live runtime</h2>
+        <div class="stats">
+          <div class="metric"><div class="k">LLM Backend</div><div class="v" id="m-backend">-</div></div>
+          <div class="metric"><div class="k">Chat Model</div><div class="v" id="m-model">-</div></div>
+          <div class="metric"><div class="k">Embeddings</div><div class="v" id="m-embed">-</div></div>
+          <div class="metric"><div class="k">Tavily Context</div><div class="v" id="m-tavily">-</div></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="workspace">
+      <article class="card">
+        <h2>Assistant Query</h2>
+        <textarea id="q" placeholder="e.g. Find nearest emergency appendectomy support in rural Bihar with part-time staffing signals"></textarea>
+        <div class="row" style="margin-top:8px;">
+          <button class="primary" id="go">Run Query</button>
+          <button id="clear">Clear</button>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <button class="quick">ICU + ventilator in Jharkhand</button>
+          <button class="quick">Audit: Apollo, Delhi</button>
+          <button class="quick">Oncology deserts by PIN</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Direct Audit</h2>
+        <p class="muted-sm">Run a focused capability audit for a specific facility.</p>
+        <div class="row" style="margin-top:8px;">
+          <input id="audit-name" placeholder="Facility name (e.g. Apollo Hospital Delhi)" />
+          <button id="btn-audit" class="primary">Run Audit</button>
+        </div>
+        <pre id="audit-out" style="margin-top:8px;">No audit run yet.</pre>
+      </article>
+
+      <article class="card">
+        <h2>Answer</h2>
+        <pre id="answer">Run a query to see ranked recommendations and justification.</pre>
+      </article>
+
+      <article class="card">
+        <h2>Trust & Validation</h2>
+        <div class="stats">
+          <div class="metric"><div class="k">Trust Score</div><div class="v" id="trust-score">-</div></div>
+          <div class="metric"><div class="k">Flags Count</div><div class="v" id="flags-count">-</div></div>
+          <div class="metric"><div class="k">Confidence</div><div class="v" id="confidence-score">-</div></div>
+          <div class="metric"><div class="k">Confidence Band</div><div class="v" id="confidence-band">-</div></div>
+        </div>
+        <ul id="trust-flags" class="list" style="margin-top:10px;">
+          <li class="muted-sm">No trust output yet.</li>
+        </ul>
+        <ul id="reason-codes" class="list" style="margin-top:8px;">
+          <li class="muted-sm">Reason codes will appear after inference.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2>Reasoning Trace</h2>
+        <ol id="cot" class="list">
+          <li class="muted-sm">No steps yet.</li>
+        </ol>
+      </article>
+
+      <article class="card">
+        <h2>Row-Level Evidence</h2>
+        <div id="citations">
+          <p class="muted-sm">Evidence snippets will appear here to justify recommendations.</p>
+        </div>
+      </article>
+
+      <article class="card full">
+        <h2>Crisis Mapping</h2>
+        <div class="row">
+          <button id="btn-desert">Load Desert Summary</button>
+          <button id="btn-map">Load Crisis Map Data</button>
+        </div>
+        <p class="muted-sm" style="margin-top:8px;">Regions are sorted by missing high-acuity specialties.</p>
+        <div class="table-wrap" style="margin-top:8px;">
+          <table class="map-table" id="desert-table">
+            <thead>
+              <tr>
+                <th>PIN</th>
+                <th>City</th>
+                <th>State</th>
+                <th>Missing Specialties</th>
+                <th>Facilities</th>
+                <th>Coords</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="6" class="muted-sm">No desert data loaded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const ui = {
+      q: document.getElementById("q"),
+      auditName: document.getElementById("audit-name"),
+      auditOut: document.getElementById("audit-out"),
+      answer: document.getElementById("answer"),
+      trustScore: document.getElementById("trust-score"),
+      flagsCount: document.getElementById("flags-count"),
+      confidenceScore: document.getElementById("confidence-score"),
+      confidenceBand: document.getElementById("confidence-band"),
+      trustFlags: document.getElementById("trust-flags"),
+      reasonCodes: document.getElementById("reason-codes"),
+      cot: document.getElementById("cot"),
+      citations: document.getElementById("citations"),
+      desertTableBody: document.querySelector("#desert-table tbody"),
+      healthDot: document.getElementById("health-dot"),
+      healthLine: document.getElementById("health-line"),
+      mBackend: document.getElementById("m-backend"),
+      mModel: document.getElementById("m-model"),
+      mEmbed: document.getElementById("m-embed"),
+      mTavily: document.getElementById("m-tavily"),
+      runBtn: document.getElementById("go"),
+    };
+
+    async function fetchJson(url, opts = {}) {
+      const res = await fetch(url, opts);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.response || ("Request failed: " + res.status));
+      return data;
+    }
+
+    function setLoading(on) {
+      ui.runBtn.disabled = on;
+      ui.runBtn.textContent = on ? "Running..." : "Run Query";
+    }
+
+    function renderMainResponse(data) {
+      ui.answer.textContent = data.response || "(No response text)";
+
+      const ts = data.trust_score;
+      ui.trustScore.textContent = (typeof ts === "number") ? ts.toFixed(3) : "-";
+      const cs = data.confidence_score;
+      ui.confidenceScore.textContent = (typeof cs === "number") ? cs.toFixed(3) : "-";
+      ui.confidenceBand.textContent = data.confidence_band || "-";
+
+      const flags = Array.isArray(data.trust_flags) ? data.trust_flags : [];
+      ui.flagsCount.textContent = String(flags.length);
+      ui.trustFlags.innerHTML = "";
+      if (!flags.length) {
+        ui.trustFlags.innerHTML = "<li class='ok'>No contradictions flagged.</li>";
+      } else {
+        for (const f of flags) {
+          const li = document.createElement("li");
+          li.className = "flag";
+          li.textContent = f;
+          ui.trustFlags.appendChild(li);
+        }
+      }
+
+      const steps = Array.isArray(data.chain_of_thought) ? data.chain_of_thought : [];
+      ui.cot.innerHTML = "";
+      if (!steps.length) {
+        ui.cot.innerHTML = "<li class='muted-sm'>No reasoning trace provided.</li>";
+      } else {
+        for (const s of steps) {
+          const li = document.createElement("li");
+          li.textContent = s;
+          ui.cot.appendChild(li);
+        }
+      }
+
+      const cites = Array.isArray(data.source_citations) ? data.source_citations : [];
+      ui.citations.innerHTML = "";
+      if (!cites.length) {
+        ui.citations.innerHTML = "<p class='muted-sm'>No source excerpts returned.</p>";
+      } else {
+        for (const c of cites) {
+          const div = document.createElement("div");
+          div.className = "cite";
+          const name = c.facility_name || "Unknown facility";
+          const pin = c.pin || "-";
+          const text = c.evidence_snippet || c.trust_evidence_snippet || "-";
+          div.innerHTML = "<b>" + escapeHtml(name) + "</b> <span class='muted-sm'>(PIN " + escapeHtml(pin) + ")</span><br/>" + escapeHtml(text);
+          ui.citations.appendChild(div);
+        }
+      }
+
+      const codes = Array.isArray(data.reason_codes) ? data.reason_codes : [];
+      ui.reasonCodes.innerHTML = "";
+      if (!codes.length) {
+        ui.reasonCodes.innerHTML = "<li class='muted-sm'>Reason codes not available.</li>";
+      } else {
+        for (const c of codes) {
+          const li = document.createElement("li");
+          li.textContent = c;
+          ui.reasonCodes.appendChild(li);
+        }
+      }
+    }
+
+    function renderDesertTable(rows) {
+      ui.desertTableBody.innerHTML = "";
+      if (!rows.length) {
+        ui.desertTableBody.innerHTML = "<tr><td colspan='6' class='muted-sm'>No desert records returned.</td></tr>";
+        return;
+      }
+      for (const r of rows.slice(0, 40)) {
+        const tr = document.createElement("tr");
+        const missing = Array.isArray(r.missing_specialties) ? r.missing_specialties.join(", ") : "-";
+        const coords = (r.lat != null && r.lon != null) ? (r.lat.toFixed(4) + ", " + r.lon.toFixed(4)) : "-";
+        tr.innerHTML =
+          "<td>" + escapeHtml(String(r.pin || "-")) + "</td>" +
+          "<td>" + escapeHtml(String(r.city || "-")) + "</td>" +
+          "<td>" + escapeHtml(String(r.state || "-")) + "</td>" +
+          "<td>" + escapeHtml(missing) + "</td>" +
+          "<td>" + escapeHtml(String(r.facility_count || "-")) + "</td>" +
+          "<td>" + escapeHtml(coords) + "</td>";
+        ui.desertTableBody.appendChild(tr);
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    async function runQuery() {
+      const message = ui.q.value.trim();
+      if (!message) return;
+      setLoading(true);
+      try {
+        const data = await fetchJson("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: message }),
+        });
+        renderMainResponse(data);
+      } catch (e) {
+        ui.answer.textContent = "Error: " + e.message;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function runAudit() {
+      const facility = ui.auditName.value.trim();
+      if (!facility) {
+        ui.auditOut.textContent = "Please enter a facility name.";
+        return;
+      }
+      ui.auditOut.textContent = "Running audit...";
+      try {
+        const data = await fetchJson("/audit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ facility_name: facility }),
+        });
+        ui.auditOut.textContent = JSON.stringify(data.audit_result || data, null, 2);
+        if (data.chain_of_thought) {
+          const merged = {
+            response: data.response || "",
+            chain_of_thought: data.chain_of_thought || [],
+            source_citations: data.source_citations || [],
+            trust_score: null,
+            trust_flags: [],
+          };
+          renderMainResponse(merged);
+        }
+      } catch (e) {
+        ui.auditOut.textContent = "Audit error: " + e.message;
+      }
+    }
+
+    async function loadHealth() {
+      try {
+        const h = await fetchJson("/health");
+        ui.healthDot.classList.add("status-ok");
+        ui.healthLine.textContent = "System online";
+        ui.mBackend.textContent = h.llm_backend || "-";
+        ui.mModel.textContent = h.chat_model || "-";
+        ui.mEmbed.textContent = h.embeddings || "-";
+        ui.mTavily.textContent = h.tavily_configured ? "Enabled" : "Disabled";
+      } catch (e) {
+        ui.healthLine.textContent = "Health check failed";
+        ui.mBackend.textContent = "-";
+        ui.mModel.textContent = "-";
+        ui.mEmbed.textContent = "-";
+        ui.mTavily.textContent = "-";
+      }
+    }
+
+    async function loadDesertSummary() {
+      try {
+        const d = await fetchJson("/desert");
+        renderDesertTable(Array.isArray(d.desert_regions) ? d.desert_regions : []);
+      } catch (e) {
+        ui.desertTableBody.innerHTML = "<tr><td colspan='6' class='flag'>Error: " + escapeHtml(e.message) + "</td></tr>";
+      }
+    }
+
+    async function loadMapData() {
+      try {
+        const m = await fetchJson("/map");
+        const regions = [];
+        for (const f of (m.features || [])) {
+          const p = f.properties || {};
+          const c = (f.geometry && f.geometry.coordinates) ? f.geometry.coordinates : [null, null];
+          regions.push({
+            pin: p.pin,
+            city: p.city,
+            state: p.state,
+            missing_specialties: p.missing_specialties || [],
+            facility_count: p.facility_count,
+            lat: c[1],
+            lon: c[0],
+          });
+        }
+        renderDesertTable(regions);
+      } catch (e) {
+        ui.desertTableBody.innerHTML = "<tr><td colspan='6' class='flag'>Error: " + escapeHtml(e.message) + "</td></tr>";
+      }
+    }
+
+    document.getElementById("go").addEventListener("click", runQuery);
+    document.getElementById("clear").addEventListener("click", () => {
+      ui.q.value = "";
+      ui.answer.textContent = "Cleared.";
+      ui.trustScore.textContent = "-";
+      ui.flagsCount.textContent = "-";
+      ui.confidenceScore.textContent = "-";
+      ui.confidenceBand.textContent = "-";
+      ui.trustFlags.innerHTML = "<li class='muted-sm'>No trust output yet.</li>";
+      ui.reasonCodes.innerHTML = "<li class='muted-sm'>Reason codes will appear after inference.</li>";
+      ui.cot.innerHTML = "<li class='muted-sm'>No steps yet.</li>";
+      ui.citations.innerHTML = "<p class='muted-sm'>Evidence snippets will appear here to justify recommendations.</p>";
+    });
+
+    document.querySelectorAll(".quick").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        ui.q.value = btn.textContent;
+        runQuery();
+      });
+    });
+
+    document.getElementById("btn-desert").addEventListener("click", loadDesertSummary);
+    document.getElementById("btn-map").addEventListener("click", loadMapData);
+    document.getElementById("btn-audit").addEventListener("click", runAudit);
+
+    loadHealth();
+  </script>
+</body>
+</html>

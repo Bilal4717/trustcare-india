@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Serving a Nation - Onboarding</title>
+  <style>
+    :root{
+      --bg:#0a1120;--bg2:#0f1b34;--panel:#111d37;--text:#eaf1ff;--muted:#9eb1d8;
+      --accent:#5d9bff;--border:#2b4169;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;color:var(--text);font-family:Inter,Segoe UI,system-ui,sans-serif;
+      background:linear-gradient(180deg,var(--bg),var(--bg2));
+    }
+    .wrap{max-width:840px;margin:0 auto;padding:24px 16px 40px}
+    .panel{border:1px solid var(--border);background:var(--panel);border-radius:14px;padding:16px}
+    h1{margin:0 0 4px;font-size:1.4rem}
+    p{margin:0;color:var(--muted);line-height:1.5}
+    .step{display:none;margin-top:12px}
+    .step.active{display:block}
+    .step h3{margin:0 0 6px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    button,a.btn{
+      border:1px solid var(--border);background:#152746;color:var(--text);
+      border-radius:9px;padding:9px 12px;text-decoration:none;font:inherit;cursor:pointer
+    }
+    button.primary{background:linear-gradient(180deg,#73b0ff,var(--accent));color:#08152b;font-weight:700;border-color:#4a7fd4}
+    .progress{display:flex;gap:6px;margin-top:10px}
+    .dot{width:8px;height:8px;border-radius:50%;background:#3a5485}
+    .dot.active{background:#8ac0ff}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h1>Onboarding</h1>
+      <p>3 quick steps before you start.</p>
+
+      <section class="step active">
+        <h3>Step 1: Ask complex care questions</h3>
+        <p>Example: "Find nearest emergency appendectomy support in rural Bihar with part-time staffing signals."</p>
+      </section>
+
+      <section class="step">
+        <h3>Step 2: Verify before trusting</h3>
+        <p>Review trust score, contradiction flags, chain-of-thought, and row-level evidence snippets.</p>
+      </section>
+
+      <section class="step">
+        <h3>Step 3: Use desert insights for planning</h3>
+        <p>Load crisis mapping data to identify regions missing oncology, dialysis, emergency trauma, and more.</p>
+      </section>
+
+      <div class="progress" id="progress"></div>
+      <div class="controls">
+        <a class="btn" href="/">Back home</a>
+        <button id="next" class="primary">Next</button>
+        <a class="btn" href="/app">Skip</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    const steps = [...document.querySelectorAll(".step")];
+    const progress = document.getElementById("progress");
+    const nextBtn = document.getElementById("next");
+    let idx = 0;
+
+    function render() {
+      steps.forEach((s, i) => s.classList.toggle("active", i === idx));
+      progress.innerHTML = "";
+      for (let i = 0; i < steps.length; i++) {
+        const d = document.createElement("span");
+        d.className = "dot" + (i === idx ? " active" : "");
+        progress.appendChild(d);
+      }
+      nextBtn.textContent = idx === steps.length - 1 ? "Go to app" : "Next";
+    }
+    nextBtn.addEventListener("click", () => {
+      if (idx < steps.length - 1) {
+        idx += 1;
+        render();
+      } else {
+        location.href = "/app";
+      }
+    });
+    render();
+  </script>
+</body>
+</html>

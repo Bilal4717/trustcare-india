@@ -1,0 +1,22 @@
+flask>=3.0
+python-dotenv>=1.0
+pandas>=2.0
+openpyxl>=3.1
+numpy>=1.26
+langchain-core>=0.3
+langchain-community>=0.3
+langgraph>=0.2
+faiss-cpu>=1.8
+pydantic>=2.0
+mlflow>=3.0.0
+tavily-python>=0.5.0
+
+# Gemini (Google AI Studio) — primary recommended path
+langchain-google-genai>=2.0.0
+
+# Local-only fallback (no Gemini/OpenAI)
+sentence-transformers>=3.0.0
+torch>=2.1.0
+
+# Optional cloud alternative
+langchain-openai>=0.2

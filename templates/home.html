@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Serving a Nation - Home</title>
+  <style>
+    :root{
+      --bg:#0a1120;
+      --bg2:#0f1b34;
+      --panel:#111d37;
+      --text:#eaf1ff;
+      --muted:#9eb1d8;
+      --accent:#5d9bff;
+      --border:#2b4169;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:Inter,Segoe UI,system-ui,sans-serif;
+      background:
+        radial-gradient(1000px 450px at 10% -10%, rgba(93,155,255,.22), transparent 55%),
+        linear-gradient(180deg,var(--bg),var(--bg2));
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 42px}
+    .nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .brand{font-weight:700}
+    .chip{font-size:.8rem;color:var(--muted);border:1px solid var(--border);padding:6px 10px;border-radius:999px}
+    .hero{
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:linear-gradient(135deg,#122447,#162b4f 60%,#132443);
+      padding:22px;
+    }
+    h1{margin:0 0 10px;font-size:clamp(1.4rem,3vw,2rem)}
+    p{margin:0;color:var(--muted);line-height:1.55}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:12px;
+    }
+    .card h3{margin:0 0 6px;font-size:.96rem}
+    .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    a.btn{
+      text-decoration:none;
+      border:1px solid var(--border);
+      border-radius:9px;
+      padding:10px 14px;
+      color:var(--text);
+      background:#152746;
+      display:inline-block;
+    }
+    a.btn.primary{
+      background:linear-gradient(180deg,#73b0ff,var(--accent));
+      color:#08152b;
+      font-weight:700;
+      border-color:#4a7fd4;
+    }
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="nav">
+      <div class="brand">Serving a Nation</div>
+      <div class="chip">Agentic Healthcare Intelligence</div>
+    </div>
+
+    <section class="hero">
+      <h1>Find the right care faster, with transparent healthcare intelligence.</h1>
+      <p>
+        Serving a Nation helps families, NGOs, and planners discover verified healthcare capabilities
+        across 10k+ Indian facilities, detect trust gaps in claims, and identify high-risk specialty deserts.
+      </p>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Discovery</h3>
+          <p>Search by location + specialty + procedure + equipment in one query.</p>
+        </div>
+        <div class="card">
+          <h3>Verification</h3>
+          <p>Audit capability claims and highlight contradictions with evidence snippets.</p>
+        </div>
+        <div class="card">
+          <h3>Social Impact</h3>
+          <p>Map underserved regions by PIN/city/state to guide intervention planning.</p>
+        </div>
+      </div>
+
+      <div class="cta">
+        <a class="btn primary" href="/onboarding">Start onboarding</a>
+        <a class="btn" href="/app">Skip to app</a>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Virtual env
+.venv/
+venv/
+
+# Environment / secrets
+.env
+
+# Local indexes and runtime artifacts
+facility_faiss_index/
+facility_faiss_index_hf/
+facility_faiss_index_gemini/
+mlruns/
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

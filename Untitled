@@ -1,0 +1,2 @@
+GEMINI_API_KEY=AQ.Ab8RN6KV9aVOoPxhTRXOSED46m5KKoKryENyvNYbZkyUxoVjog
+GEMINI_MODEL=genai.GenerativeModel('gemini-1.5-flash')
