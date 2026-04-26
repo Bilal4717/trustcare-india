@@ -162,6 +162,8 @@ def create_app() -> Flask:
         return render_template("home.html")
 
     @app.route("/onboarding")
+    @app.route("/onboarding.html")
+    @app.route("/guide")
     def onboarding():
         return render_template("onboarding.html")
 
