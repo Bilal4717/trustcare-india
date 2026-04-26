@@ -1,869 +1,1152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TrustCare India — Intelligence Workspace</title>
-
-  <!-- Leaflet for interactive map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>TrustCare India — Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Marker cluster -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
   <style>
     :root {
-      --bg:     #07090f;
-      --bg-e:   #0e1320;
-      --bg-e2:  #111827;
-      --text:   #f0f4ff;
-      --muted:  #8b9fc7;
-      --line:   #1e2d4a;
-      --line2:  #253350;
-      --accent: #3b82f6;
-      --a2:     #60a5fa;
-      --red:    #ef4444;
-      --green:  #22c55e;
-      --orange: #f59e0b;
-      --bad:    #fb7185;
-      --radius: 14px;
-      --shadow: 0 8px 32px rgba(0,0,0,.45);
+      --bg:      #0a0a0a;
+      --s1:      #111111;
+      --s2:      #181818;
+      --s3:      #1e1e1e;
+      --text:    #e8e8e8;
+      --muted:   #666666;
+      --dim:     #3a3a3a;
+      --accent:  #4493f8;
+      --a-dim:   rgba(68,147,248,0.08);
+      --a-mid:   rgba(68,147,248,0.20);
+      --success: #3fb950;
+      --warn:    #d29922;
+      --danger:  #f85149;
+      --border:  #222222;
+      --border2: #2d2d2d;
+      --radius:  8px;
+      --mono:    'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body {
-      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.5;
-      font-size: 14px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
     }
 
-    /* ── shell ── */
-    .shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    /* ── Shell ── */
+    .shell { display: flex; flex-direction: column; height: 100vh; }
 
-    /* ── top nav ── */
-    .top-bar {
-      flex-shrink: 0;
+    /* ── Top bar ── */
+    .topbar {
+      height: 48px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; padding: 0 16px;
-      height: 52px;
-      background: rgba(7,9,15,.92);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--line);
-      z-index: 200;
+      padding: 0 16px; gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--s1);
     }
-    .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: .95rem; }
-    .brand-dot { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg,#3b82f6,#60a5fa); box-shadow: 0 0 0 5px rgba(59,130,246,.18); }
-    .top-links { display: flex; gap: 6px; }
-    .top-links a { color: var(--muted); text-decoration: none; font-size: .8rem; border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; background: var(--bg-e); transition: color .15s, border-color .15s; }
-    .top-links a:hover { color: var(--text); border-color: var(--line2); }
-    .sys-chip { display: flex; align-items: center; gap: 7px; font-size: .78rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: var(--bg-e); white-space: nowrap; }
-    .sys-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
-    .sys-dot.ok { background: var(--green); }
+    .tb-left  { display: flex; align-items: center; gap: 12px; }
+    .tb-right { display: flex; align-items: center; gap: 8px; }
+    .logo-mark { width: 24px; height: 24px; border-radius: 5px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .logo-text { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; }
+    .tb-sep { width: 1px; height: 20px; background: var(--border); }
+    .sys-status { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+    .sys-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex-shrink: 0; transition: background 0.3s; }
+    .sys-dot.ok { background: var(--success); }
+    .sys-dot.err { background: var(--danger); }
+    .tb-link { font-size: 11.5px; color: var(--muted); text-decoration: none; padding: 4px 8px; border-radius: 5px; transition: all 0.15s; }
+    .tb-link:hover { color: var(--text); background: var(--s2); }
+    .tb-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 5px; font: inherit; font-size: 11.5px; font-weight: 500; cursor: pointer; border: 1px solid var(--border2); background: var(--s2); color: var(--muted); transition: all 0.15s; text-decoration: none; }
+    .tb-btn:hover { color: var(--text); border-color: var(--dim); }
 
-    /* ── tab bar ── */
-    .tab-bar {
-      flex-shrink: 0;
-      display: flex; gap: 0;
-      padding: 0 16px;
-      border-bottom: 1px solid var(--line);
-      background: var(--bg);
+    /* ── Tab bar ── */
+    .tabbar {
+      height: 40px; flex-shrink: 0;
+      display: flex; align-items: stretch;
+      border-bottom: 1px solid var(--border);
+      background: var(--s1); padding: 0 16px; gap: 0;
     }
-    .tab-btn {
-      padding: 12px 16px; font-size: .84rem; font-weight: 500;
+    .tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 14px; font-size: 12.5px; font-weight: 500;
       color: var(--muted); border: none; background: transparent;
-      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
-      transition: color .15s, border-color .15s; white-space: nowrap;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
     }
-    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .tab-btn:hover:not(.active) { color: var(--text); }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-icon { font-size: 13px; }
+    .tab-badge { font-size: 10px; background: var(--s3); border: 1px solid var(--border); border-radius: 999px; padding: 1px 6px; color: var(--dim); }
 
-    /* ── body ── */
-    .body { flex: 1; overflow: hidden; position: relative; }
-    .tab-panel { display: none; height: 100%; overflow-y: auto; padding: 14px 16px 24px; }
-    .tab-panel.active { display: block; }
-    /* map panel needs no scroll */
+    /* ── Content area ── */
+    .content { flex: 1; overflow: hidden; position: relative; }
+    .panel { display: none; height: 100%; overflow-y: auto; padding: 16px; }
+    .panel.active { display: block; }
     #panel-map.active { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
 
-    /* ── grid layouts ── */
-    .grid-2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+    /* ── Grid layouts ── */
+    .g2   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .g2-r { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; }
+    .g3   { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .g4   { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
     .full { grid-column: 1 / -1; }
+    .mb   { margin-bottom: 10px; }
 
-    /* ── card ── */
+    /* ── Card ── */
     .card {
-      background: linear-gradient(160deg, var(--bg-e), var(--bg-e2));
-      border: 1px solid var(--line);
+      background: var(--s1);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
-      box-shadow: var(--shadow);
+      overflow: hidden;
     }
-    .card-title { font-size: .88rem; font-weight: 600; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-    .card-title .tag { font-size: .7rem; font-weight: 500; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
-
-    /* ── form elements ── */
-    textarea, input[type="text"] {
-      width: 100%; padding: 10px 12px;
-      background: rgba(255,255,255,.04); border: 1px solid var(--line2);
-      border-radius: 10px; color: var(--text); font: inherit; font-size: .9rem;
-      outline: none; resize: vertical;
-      transition: border-color .15s, background .15s;
+    .card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
     }
-    textarea:focus, input[type="text"]:focus { border-color: var(--accent); background: rgba(59,130,246,.06); }
-    textarea { min-height: 90px; }
-    button {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 14px; border: 1px solid var(--line2); border-radius: 10px;
-      background: var(--bg-e); color: var(--text); font: inherit; font-size: .85rem;
-      cursor: pointer; transition: background .15s, border-color .15s, transform .12s;
+    .card-title { font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: 0.1px; display: flex; align-items: center; gap: 7px; }
+    .card-body  { padding: 14px; }
+    .card-foot  { padding: 10px 14px; border-top: 1px solid var(--border); background: var(--s2); }
+    .card-badge { font-size: 10px; border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; color: var(--muted); background: var(--s2); font-family: var(--mono); }
+
+    /* ── Form elements ── */
+    textarea, input[type="text"], select {
+      width: 100%; padding: 9px 12px;
+      background: var(--s2); border: 1px solid var(--border2);
+      border-radius: 6px; color: var(--text); font: inherit;
+      font-size: 13px; outline: none; resize: vertical;
+      transition: border-color 0.15s, background 0.15s;
     }
-    button:hover { background: #1a2540; border-color: var(--line2); transform: translateY(-1px); }
-    button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-    .btn-run { background: linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; font-weight:700; border-color:#2563eb; box-shadow: 0 0 0 1px rgba(59,130,246,.3); }
-    .btn-run:hover { background: linear-gradient(135deg,#2563eb,#60a5fa); box-shadow: 0 0 0 1px rgba(59,130,246,.5); }
-    .btn-sm { padding: 6px 10px; font-size: .78rem; border-radius: 8px; }
-    .quick-btn { font-size: .78rem; color: var(--muted); border-color: var(--line); border-radius: 999px; padding: 5px 10px; }
-    .quick-btn:hover { color: var(--text); }
-
-    /* ── metrics row ── */
-    .metric { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: rgba(255,255,255,.03); }
-    .metric .k { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }
-    .metric .v { font-size: 1.1rem; font-weight: 700; }
-    .v.blue   { color: var(--a2); }
-    .v.green  { color: var(--green); }
-    .v.orange { color: var(--orange); }
-    .v.red    { color: var(--bad); }
-
-    /* ── trust gauge ── */
-    .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
-    .gauge-svg { width: 120px; height: 70px; }
-    .gauge-label { font-size: .72rem; color: var(--muted); margin-top: 4px; }
-    .gauge-val { font-size: 1.4rem; font-weight: 800; color: var(--text); line-height: 1; }
-
-    /* ── answer box ── */
-    .answer-box {
-      background: rgba(255,255,255,.025); border: 1px solid var(--line);
-      border-radius: 10px; padding: 12px; min-height: 80px;
-      font-size: .87rem; line-height: 1.6; color: #d8e4ff; white-space: pre-wrap;
-      overflow-y: auto; max-height: 340px;
+    textarea { min-height: 88px; font-family: inherit; }
+    textarea:focus, input[type="text"]:focus {
+      border-color: var(--accent);
+      background: rgba(68,147,248,0.04);
     }
-    .skeleton { background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; height: 16px; margin: 6px 0; }
-    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
-    /* ── audit output ── */
-    .audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-    .audit-pill {
+    .btn {
       display: inline-flex; align-items: center; gap: 5px;
-      padding: 4px 9px; border-radius: 999px; font-size: .75rem; font-weight: 500;
+      padding: 7px 12px; border-radius: 6px; font: inherit;
+      font-size: 12.5px; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--border2); background: var(--s2);
+      color: var(--muted); transition: all 0.15s; text-decoration: none;
     }
-    .pill-ok  { background: rgba(34,197,94,.15);  color: var(--green); border: 1px solid rgba(34,197,94,.3);  }
-    .pill-bad { background: rgba(239,68,68,.15);  color: var(--bad);   border: 1px solid rgba(239,68,68,.3);  }
-    .pill-warn{ background: rgba(245,158,11,.15); color: var(--orange);border: 1px solid rgba(245,158,11,.3); }
+    .btn:hover { color: var(--text); border-color: var(--dim); background: var(--s3); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+    .btn-run {
+      background: var(--accent); border-color: rgba(68,147,248,0.5);
+      color: #fff; font-weight: 600;
+    }
+    .btn-run:hover { background: #3a82e8; }
+    .btn-sm  { padding: 5px 9px; font-size: 11.5px; border-radius: 5px; }
+    .btn-ghost{ background: transparent; border-color: var(--border); }
+    .btn-danger{ background: rgba(248,81,73,0.1); border-color: rgba(248,81,73,0.3); color: var(--danger); }
+    .kbd {
+      display: inline-flex; align-items: center;
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 1px 5px; font-family: var(--mono); font-size: 10px;
+      color: var(--muted); background: var(--s2);
+    }
+
+    /* ── Metric tile ── */
+    .metric { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; background: var(--s2); }
+    .metric-k { font-size: 10.5px; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.3px; }
+    .metric-v { font-size: 18px; font-weight: 600; line-height: 1; }
+    .metric-v.blue    { color: var(--accent); }
+    .metric-v.green   { color: var(--success); }
+    .metric-v.orange  { color: var(--warn); }
+    .metric-v.red     { color: var(--danger); }
+    .metric-v.mono    { font-family: var(--mono); font-size: 14px; }
+
+    /* ── Quick queries ── */
+    .quick-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .quick-tag {
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 4px 10px; font-size: 11.5px; color: var(--muted);
+      background: transparent; cursor: pointer; transition: all 0.15s;
+    }
+    .quick-tag:hover { color: var(--text); border-color: var(--dim); background: var(--s2); }
+
+    /* ── Answer box ── */
+    .answer-box {
+      background: var(--s2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 12px 14px;
+      font-size: 13px; line-height: 1.7; color: #c8d6f0;
+      white-space: pre-wrap; word-break: break-word;
+      max-height: 300px; overflow-y: auto;
+      font-family: inherit;
+      min-height: 72px;
+    }
+    .answer-box.typing::after {
+      content: '▊'; color: var(--accent); animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── Gauge ── */
+    .gauge-wrap { display: flex; gap: 14px; align-items: center; }
+    .gauge-svg { flex-shrink: 0; }
+    .gauge-side { flex: 1; }
 
     /* ── CI bar ── */
-    .ci-bar-wrap { margin-top: 8px; }
-    .ci-label { font-size: .72rem; color: var(--muted); margin-bottom: 4px; }
-    .ci-track { height: 6px; background: rgba(255,255,255,.07); border-radius: 999px; position: relative; }
-    .ci-fill  { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--a2)); }
-    .ci-marker{ position: absolute; top: -4px; width: 2px; height: 14px; background: #fff; border-radius: 1px; }
+    .ci-wrap { margin-top: 8px; }
+    .ci-lbl  { font-size: 10.5px; color: var(--muted); margin-bottom: 5px; }
+    .ci-track { height: 5px; background: var(--s3); border-radius: 999px; position: relative; }
+    .ci-fill  { height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.4s; }
+    .ci-ptr   { position: absolute; top: -5px; width: 2px; height: 15px; background: var(--text); border-radius: 1px; }
+    .ci-range { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 3px; }
 
-    /* ── cot steps ── */
+    /* ── Chain of thought ── */
     .cot-list { list-style: none; }
-    .cot-list li { display: flex; gap: 9px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: .82rem; color: var(--muted); }
-    .cot-list li:last-child { border-bottom: none; }
-    .cot-list li::before { content: "→"; color: var(--accent); flex-shrink: 0; }
-
-    /* ── citations ── */
-    .cite-card { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,.02); }
-    .cite-name { font-weight: 600; font-size: .84rem; color: var(--text); }
-    .cite-pin  { font-size: .75rem; color: var(--muted); margin-left: 6px; }
-    .cite-text { font-size: .79rem; color: #99b4e0; margin-top: 5px; line-height: 1.5; }
-
-    /* ── flags list ── */
-    .flag-item { display: flex; gap: 7px; align-items: flex-start; padding: 5px 0; font-size: .81rem; }
-    .flag-item.bad  { color: var(--bad); }
-    .flag-item.ok   { color: var(--green); }
-    .flag-item::before { content: "⚑"; flex-shrink: 0; }
-    .flag-item.ok::before { content: "✓"; }
-
-    /* ── reason codes ── */
-    .code-tag { display: inline-block; background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.2); color: var(--a2); font-size: .72rem; border-radius: 6px; padding: 2px 7px; margin: 2px; }
-
-    /* ── desert table ── */
-    .tbl-wrap { overflow: auto; margin-top: 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-    th { text-align: left; color: var(--muted); font-weight: 600; padding: 7px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-    td { padding: 6px 6px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
-    tr:hover td { background: rgba(255,255,255,.02); }
-    .priority-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .7rem; font-weight: 600; }
-    .p-critical { background: rgba(239,68,68,.15);  color: #fb7185; border: 1px solid rgba(239,68,68,.3); }
-    .p-high     { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
-    .p-medium   { background: rgba(234,179,8,.15);  color: #facc15; border: 1px solid rgba(234,179,8,.3);  }
-    .p-low      { background: rgba(34,197,94,.15);  color: #4ade80; border: 1px solid rgba(34,197,94,.3);  }
-
-    /* ── map panel ── */
-    .map-toolbar { flex-shrink: 0; display: flex; gap: 8px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--bg-e); flex-wrap: wrap; }
-    .map-toolbar span { font-size: .78rem; color: var(--muted); }
-    #leaflet-map { flex: 1; min-height: 0; }
-    .leaflet-tile-pane { filter: brightness(.75) saturate(.4) hue-rotate(190deg); }
-    .legend-box { background: rgba(14,19,32,.9); border: 1px solid #1e2d4a; border-radius: 10px; padding: 10px 12px; font-size: .76rem; }
-    .leg-row { display: flex; align-items: center; gap: 7px; margin: 4px 0; color: #b0c4e8; }
-    .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-    /* ── stats panel ── */
-    .stat-section { margin-bottom: 16px; }
-    .stat-section h3 { font-size: .84rem; font-weight: 600; margin-bottom: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
-    .fill-bar { height: 6px; background: rgba(255,255,255,.07); border-radius: 999px; margin-top: 4px; overflow: hidden; }
-    .fill-bar-inner { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--a2)); }
-    .fill-row { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: 3px; }
-
-    /* ── loading overlay ── */
-    .loading-overlay {
-      position: absolute; inset: 0; background: rgba(7,9,15,.75);
-      display: none; align-items: center; justify-content: center;
-      z-index: 50; border-radius: var(--radius);
+    .cot-item {
+      display: flex; gap: 8px; align-items: flex-start;
+      padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-size: 12px; color: var(--muted); line-height: 1.5;
     }
-    .loading-overlay.show { display: flex; }
-    .spinner { width: 28px; height: 28px; border: 3px solid var(--line2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    .cot-item:last-child { border-bottom: none; }
+    .cot-arrow { color: var(--accent); flex-shrink: 0; font-family: var(--mono); font-size: 10px; margin-top: 2px; }
+    .cot-step-num { color: var(--dim); font-family: var(--mono); font-size: 10px; flex-shrink: 0; min-width: 18px; }
+
+    /* ── Citations ── */
+    .cite-card {
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 10px 12px; margin-bottom: 7px; background: var(--s2);
+      transition: border-color 0.15s;
+    }
+    .cite-card:hover { border-color: var(--border2); }
+    .cite-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+    .cite-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .cite-meta { font-size: 10.5px; color: var(--dim); font-family: var(--mono); }
+    .cite-text { font-size: 11.5px; color: #99b4e0; line-height: 1.55; }
+
+    /* ── Flags ── */
+    .flag-item {
+      display: flex; gap: 7px; align-items: flex-start;
+      padding: 5px 0; font-size: 12px;
+    }
+    .flag-item + .flag-item { border-top: 1px solid rgba(255,255,255,0.03); }
+    .flag-bad  { color: var(--danger); }
+    .flag-ok   { color: var(--success); }
+    .flag-warn { color: var(--warn); }
+    .flag-icon { flex-shrink: 0; font-size: 11px; margin-top: 1px; }
+
+    /* ── Audit pills ── */
+    .cap-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cap-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 5px; font-size: 12px; font-weight: 500;
+    }
+    .cap-ok   { background: rgba(63,185,80,.10); border: 1px solid rgba(63,185,80,.25); color: var(--success); }
+    .cap-bad  { background: rgba(248,81,73,.10);  border: 1px solid rgba(248,81,73,.25); color: var(--danger); }
+    .cap-warn { background: rgba(210,153,34,.10); border: 1px solid rgba(210,153,34,.25); color: var(--warn); }
+
+    /* ── Code tags (reason codes) ── */
+    .code-tag {
+      display: inline-block; font-family: var(--mono); font-size: 10.5px;
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 2px 6px; color: var(--dim); background: var(--s2);
+      margin: 2px;
+    }
+
+    /* ── Desert table ── */
+    .tbl-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-align: left; color: var(--muted); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; font-size: 11px; letter-spacing: 0.3px; text-transform: uppercase; }
+    td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,0.015); }
+    .p-critical { background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.25); color: #ff6b6b; border-radius: 4px; padding: 2px 8px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+    .p-high     { background: rgba(210,153,34,.12); border: 1px solid rgba(210,153,34,.25); color: #f0b429; border-radius: 4px; padding: 2px 8px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+    .p-medium   { background: rgba(68,147,248,.10); border: 1px solid rgba(68,147,248,.25); color: var(--accent); border-radius: 4px; padding: 2px 8px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+    .p-low      { background: rgba(63,185,80,.10);  border: 1px solid rgba(63,185,80,.25); color: var(--success); border-radius: 4px; padding: 2px 8px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+
+    /* ── Map ── */
+    .map-bar {
+      flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-bottom: 1px solid var(--border);
+      background: var(--s1); flex-wrap: wrap;
+    }
+    .map-status { font-size: 11.5px; color: var(--muted); margin-left: auto; }
+    #leaflet-map { flex: 1; min-height: 0; }
+    .leaflet-tile-pane { filter: brightness(0.6) saturate(0.3) hue-rotate(185deg); }
+    .legend-box {
+      background: rgba(17,17,17,0.94); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 13px; font-size: 11.5px;
+    }
+    .leg-row { display: flex; align-items: center; gap: 7px; color: var(--muted); margin: 4px 0; }
+    .leg-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    /* cluster overrides */
+    .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(68,147,248,.15) !important; }
+    .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background: rgba(68,147,248,.4) !important; color: #fff !important; font-weight: 600; }
+
+    /* ── Stats ── */
+    .fill-bar { height: 4px; background: var(--s3); border-radius: 999px; margin-top: 5px; overflow: hidden; }
+    .fill-inner { height: 100%; border-radius: 999px; background: var(--accent); }
+    .fill-row { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--dim); margin-top: 3px; }
+
+    /* ── History sidebar ── */
+    .history-item {
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.15s; font-size: 12px;
+    }
+    .history-item:hover { background: var(--s2); }
+    .history-item .h-text { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-item .h-time { font-size: 10px; color: var(--dim); margin-top: 2px; font-family: var(--mono); }
+
+    /* ── History dropdown ── */
+    .history-panel {
+      display: none; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--s1); margin-top: 6px; overflow: hidden; max-height: 220px;
+      overflow-y: auto;
+    }
+    .history-panel.open { display: block; }
+    .hist-empty { padding: 12px; font-size: 12px; color: var(--dim); text-align: center; }
+
+    /* ── Answer metadata chips ── */
+    .meta-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 2px 7px; font-size: 10.5px; color: var(--muted);
+      background: var(--s2); font-family: var(--mono);
+    }
+    .meta-chip.blue  { border-color: rgba(68,147,248,0.3); color: var(--accent); background: rgba(68,147,248,0.06); }
+    .meta-chip.green { border-color: rgba(63,185,80,0.3);  color: var(--success); background: rgba(63,185,80,0.06); }
+    .meta-chip.warn  { border-color: rgba(210,153,34,0.3); color: var(--warn);   background: rgba(210,153,34,0.06); }
+
+    /* ── Map state filter ── */
+    .map-filter-input {
+      background: var(--s2); border: 1px solid var(--border2);
+      border-radius: 5px; color: var(--text); font: inherit;
+      font-size: 12px; padding: 4px 9px; outline: none;
+      width: 140px; transition: border-color 0.15s;
+    }
+    .map-filter-input:focus { border-color: var(--accent); }
+
+    /* ── Loading ── */
+    .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── scrollbar ── */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 999px; }
 
-    /* ── responsive ── */
+    /* ── Tooltips ── */
+    [data-tip] { position: relative; cursor: help; }
+    [data-tip]::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); background: var(--s3); border: 1px solid var(--border2); border-radius: 5px; padding: 4px 8px; font-size: 11px; color: var(--text); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 999; }
+    [data-tip]:hover::after { opacity: 1; }
+
+    /* ── Responsive ── */
     @media (max-width: 960px) {
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .g2, .g2-r, .g3, .g4 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 <div class="shell">
 
-  <!-- ── Top nav ── -->
-  <header class="top-bar">
-    <div class="brand">
-      <span class="brand-dot"></span>
-      TrustCare India
+  <!-- ── Top bar ── -->
+  <header class="topbar">
+    <div class="tb-left">
+      <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit">
+        <span class="logo-mark">TC</span>
+        <span class="logo-text">TrustCare India</span>
+      </a>
+      <span class="tb-sep"></span>
+      <div class="sys-status">
+        <span class="sys-dot" id="sys-dot"></span>
+        <span id="sys-txt">Initialising…</span>
+      </div>
     </div>
-    <nav class="top-links">
-      <a href="/">Home</a>
-      <a href="/onboarding">Guide</a>
-      <a href="/desert/export.csv" target="_blank">Export CSV</a>
-      <a href="/stats" target="_blank">Stats API</a>
-    </nav>
-    <div class="sys-chip">
-      <span class="sys-dot" id="sys-dot"></span>
-      <span id="sys-line">Connecting…</span>
+    <div class="tb-right">
+      <a class="tb-link" href="/">Home</a>
+      <a class="tb-link" href="/onboarding">Guide</a>
+      <a class="tb-btn" href="/desert/export.csv" target="_blank">↓ Export CSV</a>
+      <a class="tb-btn" href="/stats" target="_blank">Stats API</a>
     </div>
   </header>
 
   <!-- ── Tab bar ── -->
-  <div class="tab-bar">
-    <button class="tab-btn active" data-tab="query">🔍 Query</button>
-    <button class="tab-btn" data-tab="audit">🛡️ Audit</button>
-    <button class="tab-btn" data-tab="map">🗺️ Crisis Map</button>
-    <button class="tab-btn" data-tab="stats">📊 Dataset Stats</button>
-  </div>
+  <nav class="tabbar">
+    <button class="tab active" data-tab="query"><span class="tab-icon">⌕</span> Query</button>
+    <button class="tab" data-tab="audit"><span class="tab-icon">⊙</span> Audit</button>
+    <button class="tab" data-tab="desert"><span class="tab-icon">⊘</span> Desert Scan</button>
+    <button class="tab" data-tab="map"><span class="tab-icon">◎</span> Crisis Map</button>
+    <button class="tab" data-tab="stats"><span class="tab-icon">≋</span> Dataset Stats</button>
+  </nav>
 
-  <!-- ── Body ── -->
-  <div class="body">
+  <!-- ── Content ── -->
+  <div class="content">
 
-    <!-- ════════════════ QUERY PANEL ════════════════ -->
-    <div id="panel-query" class="tab-panel active">
-      <div class="grid-2" style="margin-bottom:12px">
+    <!-- ════════ QUERY PANEL ════════ -->
+    <div id="panel-query" class="panel active">
+      <div class="g2-r mb">
 
-        <!-- Query input -->
-        <div class="card" style="position:relative">
-          <div class="loading-overlay" id="query-loading"><div class="spinner"></div></div>
-          <div class="card-title">Assistant Query</div>
-          <textarea id="q" placeholder="e.g. Find nearest emergency appendectomy support in rural Bihar with part-time staffing signals…"></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-            <button class="btn-run" id="btn-run">Run Query</button>
-            <button id="btn-clear" class="btn-sm">Clear</button>
+        <!-- Input card -->
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">
+              <span>Assistant Query</span>
+              <span class="card-badge" id="intent-badge">—</span>
+            </span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="kbd">Ctrl</span><span style="font-size:10px;color:var(--dim)">+</span><span class="kbd">↵</span>
+              <span style="font-size:10.5px;color:var(--dim)">submit</span>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-            <button class="quick-btn">ICU + ventilator in Jharkhand</button>
-            <button class="quick-btn">Dialysis in rural Rajasthan</button>
-            <button class="quick-btn">Oncology deserts by PIN</button>
-            <button class="quick-btn">Neonatal ICU near Bihar</button>
+          <div class="card-body">
+            <textarea id="q" placeholder="e.g. Find nearest facility in rural Bihar that can perform emergency appendectomy with part-time doctors…"></textarea>
+            <div style="display:flex;gap:7px;margin-top:8px">
+              <button class="btn btn-run" id="btn-run">Run Query</button>
+              <button class="btn btn-ghost btn-sm" id="btn-clear">Clear</button>
+              <div id="run-spinner" style="display:none"><div class="spinner"></div></div>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+              <div class="quick-bar" id="quick-bar">
+                <button class="quick-tag">ICU + ventilator Jharkhand</button>
+                <button class="quick-tag">Dialysis rural Rajasthan</button>
+                <button class="quick-tag">Neonatal ICU Bihar</button>
+                <button class="quick-tag">Oncology deserts by PIN</button>
+                <button class="quick-tag">Trauma surgery Uttar Pradesh</button>
+              </div>
+              <button class="btn btn-sm btn-ghost" id="btn-history" title="Recent queries" style="flex-shrink:0;margin-left:8px">
+                ⟳ History
+              </button>
+            </div>
+            <div class="history-panel" id="history-panel">
+              <div class="hist-empty" id="hist-empty">No recent queries.</div>
+            </div>
           </div>
         </div>
 
-        <!-- Runtime metrics -->
+        <!-- Trust / confidence card -->
         <div class="card">
-          <div class="card-title">Live Runtime</div>
-          <div class="grid-2" style="gap:8px">
-            <div class="metric"><div class="k">LLM Backend</div><div class="v blue" id="m-backend">—</div></div>
-            <div class="metric"><div class="k">Chat Model</div><div class="v" id="m-model" style="font-size:.85rem">—</div></div>
-            <div class="metric"><div class="k">Embeddings</div><div class="v" id="m-embed" style="font-size:.78rem">—</div></div>
-            <div class="metric"><div class="k">Tavily Web</div><div class="v" id="m-tavily">—</div></div>
+          <div class="card-head">
+            <span class="card-title">Trust &amp; Confidence</span>
+            <span id="conf-band-chip" style="font-size:10.5px;color:var(--muted)">—</span>
           </div>
-          <div style="margin-top:10px">
-            <div class="metric"><div class="k">Data Source</div><div class="v blue" id="m-datasource" style="font-size:.82rem">—</div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid-2" style="margin-bottom:12px">
-        <!-- Answer -->
-        <div class="card">
-          <div class="card-title">Answer <span class="tag" id="intent-tag">—</span></div>
-          <div class="answer-box" id="answer">Run a query to see ranked recommendations and citations.</div>
-        </div>
-
-        <!-- Trust & confidence -->
-        <div class="card">
-          <div class="card-title">Trust &amp; Confidence</div>
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <div class="gauge-wrap">
-              <svg class="gauge-svg" viewBox="0 0 120 70">
-                <path d="M15,65 A55,55 0 0,1 105,65" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="10" stroke-linecap="round"/>
-                <path id="gauge-arc" d="M15,65 A55,55 0 0,1 105,65" fill="none" stroke="url(#gauge-grad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="172" stroke-dashoffset="172"/>
+          <div class="card-body">
+            <!-- Gauge -->
+            <div class="gauge-wrap" style="margin-bottom:10px">
+              <svg class="gauge-svg" width="100" height="58" viewBox="0 0 100 58">
+                <path d="M10,55 A45,45 0 0,1 90,55" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="8" stroke-linecap="round"/>
+                <path id="gauge-arc" d="M10,55 A45,45 0 0,1 90,55" fill="none" stroke="url(#gg)" stroke-width="8" stroke-linecap="round" stroke-dasharray="141" stroke-dashoffset="141"/>
                 <defs>
-                  <linearGradient id="gauge-grad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stop-color="#ef4444"/>
-                    <stop offset="50%" stop-color="#f59e0b"/>
-                    <stop offset="100%" stop-color="#22c55e"/>
+                  <linearGradient id="gg" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#f85149"/>
+                    <stop offset="50%" stop-color="#d29922"/>
+                    <stop offset="100%" stop-color="#3fb950"/>
                   </linearGradient>
                 </defs>
-                <text x="60" y="58" text-anchor="middle" fill="#f0f4ff" font-size="18" font-weight="800" font-family="Inter,sans-serif" id="gauge-text">—</text>
+                <text x="50" y="52" text-anchor="middle" fill="var(--text)" font-size="15" font-weight="600" font-family="Inter,sans-serif" id="gauge-txt">—</text>
               </svg>
-              <div class="gauge-label" id="gauge-band">Confidence Band</div>
-            </div>
-            <div style="flex:1">
-              <div class="grid-2" style="gap:6px">
-                <div class="metric"><div class="k">Trust Score</div><div class="v" id="trust-score">—</div></div>
-                <div class="metric"><div class="k">Flags</div><div class="v red" id="flags-count">—</div></div>
-              </div>
-              <!-- Confidence interval bar -->
-              <div class="ci-bar-wrap" id="ci-wrap" style="display:none">
-                <div class="ci-label">Confidence Interval (95%)</div>
-                <div class="ci-track">
-                  <div class="ci-fill" id="ci-fill"></div>
-                  <div class="ci-marker" id="ci-marker"></div>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:3px">
-                  <span id="ci-lo">—</span><span id="ci-hi">—</span>
+              <div class="gauge-side">
+                <div class="g2" style="gap:6px">
+                  <div class="metric">
+                    <div class="metric-k">Trust Score</div>
+                    <div class="metric-v blue mono" id="trust-val">—</div>
+                  </div>
+                  <div class="metric">
+                    <div class="metric-k">Flags</div>
+                    <div class="metric-v red" id="flags-count">—</div>
+                  </div>
                 </div>
               </div>
             </div>
+            <!-- CI bar -->
+            <div class="ci-wrap" id="ci-wrap" style="display:none">
+              <div class="ci-lbl" data-tip="95% bootstrap confidence interval">Confidence Interval (95%)</div>
+              <div class="ci-track">
+                <div class="ci-fill" id="ci-fill" style="width:0%"></div>
+                <div class="ci-ptr" id="ci-ptr" style="left:0%"></div>
+              </div>
+              <div class="ci-range"><span id="ci-lo">—</span><span>1.0</span></div>
+            </div>
+            <!-- Flags -->
+            <div id="flags-list" style="margin-top:10px"></div>
           </div>
-          <!-- Trust flags -->
-          <div id="trust-flags" style="margin-top:10px"></div>
-          <!-- Reason codes -->
-          <div id="reason-codes" style="margin-top:8px"></div>
+          <div class="card-foot" style="padding:8px 14px">
+            <div id="reason-codes"></div>
+          </div>
         </div>
       </div>
 
-      <div class="grid-2">
+      <!-- Answer -->
+      <div class="card mb">
+        <div class="card-head">
+          <span class="card-title">Answer</span>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center" id="ans-meta"></div>
+        </div>
+        <div class="card-body" style="padding:10px 12px">
+          <div class="answer-box" id="answer">Run a query to see ranked recommendations, evidence citations, and trust analysis.</div>
+        </div>
+      </div>
+
+      <div class="g2">
         <!-- Chain of thought -->
         <div class="card">
-          <div class="card-title">Reasoning Trace</div>
-          <ol id="cot" class="cot-list"><li>No steps yet.</li></ol>
+          <div class="card-head">
+            <span class="card-title">Reasoning Trace</span>
+            <span id="cot-count" style="font-size:10.5px;color:var(--dim)">0 steps</span>
+          </div>
+          <div class="card-body" style="padding:6px 10px">
+            <ul id="cot" class="cot-list"><li class="cot-item"><span class="cot-arrow">→</span><span style="color:var(--dim)">No steps yet. Run a query.</span></li></ul>
+          </div>
         </div>
 
         <!-- Evidence citations -->
         <div class="card">
-          <div class="card-title">Row-Level Evidence</div>
-          <div id="citations"><p style="color:var(--muted);font-size:.84rem">Evidence snippets appear here after a query.</p></div>
+          <div class="card-head">
+            <span class="card-title">Row-Level Evidence</span>
+            <span id="cite-count" style="font-size:10.5px;color:var(--dim)">0 citations</span>
+          </div>
+          <div class="card-body" style="padding:10px">
+            <div id="citations"><p style="font-size:12px;color:var(--muted)">Evidence snippets appear here after a query — verbatim text from facility records.</p></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- ════════════════ AUDIT PANEL ════════════════ -->
-    <div id="panel-audit" class="tab-panel">
-      <div class="grid-2" style="margin-bottom:12px">
-        <div class="card" style="position:relative">
-          <div class="loading-overlay" id="audit-loading"><div class="spinner"></div></div>
-          <div class="card-title">Capability Audit</div>
-          <p style="font-size:.83rem;color:var(--muted);margin-bottom:10px">Verify a specific facility's capability claims against evidence from the dataset.</p>
-          <div style="display:flex;gap:8px">
-            <input type="text" id="audit-name" placeholder="Facility name, e.g. Apollo Hospital Delhi" style="flex:1"/>
-            <button class="btn-run" id="btn-audit">Audit</button>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-            <button class="quick-btn" onclick="document.getElementById('audit-name').value=this.textContent;document.getElementById('btn-audit').click()">Apollo Hospital Delhi</button>
-            <button class="quick-btn" onclick="document.getElementById('audit-name').value=this.textContent;document.getElementById('btn-audit').click()">AIIMS Patna</button>
-            <button class="quick-btn" onclick="document.getElementById('audit-name').value=this.textContent;document.getElementById('btn-audit').click()">Fortis Jaipur</button>
-          </div>
-        </div>
+    <!-- ════════ AUDIT PANEL ════════ -->
+    <div id="panel-audit" class="panel">
+      <div class="g2-r mb">
         <div class="card">
-          <div class="card-title">Audit Confidence</div>
-          <div class="grid-2" style="gap:8px">
-            <div class="metric"><div class="k">Confidence</div><div class="v blue" id="a-conf">—</div></div>
-            <div class="metric"><div class="k">Band</div><div class="v" id="a-band">—</div></div>
-            <div class="metric"><div class="k">CI Lower</div><div class="v" id="a-ci-lo">—</div></div>
-            <div class="metric"><div class="k">CI Upper</div><div class="v" id="a-ci-hi">—</div></div>
+          <div class="card-head">
+            <span class="card-title">Capability Audit</span>
           </div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-title">Capability Verification</div>
-          <div id="audit-caps"><p style="color:var(--muted);font-size:.83rem">Run an audit to see claimed vs. verified capabilities.</p></div>
-          <div id="audit-meta" style="margin-top:10px;display:none">
-            <div class="grid-2" style="gap:8px">
-              <div class="metric"><div class="k">Doctors</div><div class="v" id="a-doctors">—</div></div>
-              <div class="metric"><div class="k">Bed Capacity</div><div class="v" id="a-beds">—</div></div>
-              <div class="metric"><div class="k">Verification Ratio</div><div class="v green" id="a-ratio">—</div></div>
-              <div class="metric"><div class="k">Alternatives</div><div class="v" id="a-alts">—</div></div>
+          <div class="card-body">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">
+              Verify a facility's capability claims against evidence extracted from its own records.
+              Every verdict is backed by a verbatim text snippet.
+            </p>
+            <div style="display:flex;gap:7px">
+              <input type="text" id="audit-name" placeholder="Facility name, e.g. AIIMS Patna" style="flex:1"/>
+              <button class="btn btn-run" id="btn-audit">Audit</button>
+            </div>
+            <div style="margin-top:10px" class="quick-bar">
+              <button class="quick-tag" onclick="fillAudit('AIIMS Patna')">AIIMS Patna</button>
+              <button class="quick-tag" onclick="fillAudit('Apollo Hospital Delhi')">Apollo Delhi</button>
+              <button class="quick-tag" onclick="fillAudit('Fortis Jaipur')">Fortis Jaipur</button>
+              <button class="quick-tag" onclick="fillAudit('Medanta Gurugram')">Medanta</button>
             </div>
           </div>
         </div>
         <div class="card">
-          <div class="card-title">Evidence &amp; Chain of Thought</div>
-          <div id="audit-cot" class="cot-list" style="list-style:none"><li style="color:var(--muted);font-size:.83rem">No audit run yet.</li></div>
-          <div id="audit-cites" style="margin-top:10px"></div>
+          <div class="card-head"><span class="card-title">Audit Confidence</span></div>
+          <div class="card-body">
+            <div class="g2" style="gap:7px">
+              <div class="metric"><div class="metric-k">Confidence</div><div class="metric-v blue mono" id="a-conf">—</div></div>
+              <div class="metric"><div class="metric-k">Band</div><div class="metric-v" id="a-band">—</div></div>
+              <div class="metric"><div class="metric-k">CI Lower</div><div class="metric-v mono" id="a-ci-lo">—</div></div>
+              <div class="metric"><div class="metric-k">CI Upper</div><div class="metric-v mono" id="a-ci-hi">—</div></div>
+            </div>
+            <div style="margin-top:10px" class="g2" style="gap:7px">
+              <div class="metric"><div class="metric-k">Verification Ratio</div><div class="metric-v green" id="a-ratio">—</div></div>
+              <div class="metric"><div class="metric-k">Doctors</div><div class="metric-v" id="a-docs">—</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Capability Verification</span>
+            <div id="a-spinner" style="display:none"><div class="spinner"></div></div>
+          </div>
+          <div class="card-body">
+            <div id="audit-caps"><p style="font-size:12px;color:var(--muted)">Run an audit to see claimed vs. verified capabilities.</p></div>
+            <div id="audit-missing" style="margin-top:12px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><span class="card-title">Evidence &amp; Trace</span></div>
+          <div class="card-body" style="padding:10px">
+            <ul id="audit-cot" class="cot-list"><li class="cot-item"><span class="cot-arrow">→</span><span style="color:var(--dim)">No audit run yet.</span></li></ul>
+            <div id="audit-cites" style="margin-top:10px"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- ════════════════ MAP PANEL ════════════════ -->
-    <div id="panel-map" class="tab-panel">
-      <div class="map-toolbar">
-        <button class="btn-sm" id="btn-load-deserts">Load Desert Regions</button>
-        <button class="btn-sm" id="btn-load-facilities">Load Facility Markers</button>
-        <button class="btn-sm" id="btn-clear-map">Clear Map</button>
-        <span id="map-status">Click a button to load data onto the map.</span>
+    <!-- ════════ DESERT PANEL ════════ -->
+    <div id="panel-desert" class="panel">
+      <div class="card mb">
+        <div class="card-head">
+          <span class="card-title">Healthcare Desert Scanner</span>
+          <div style="display:flex;gap:7px;align-items:center">
+            <button class="btn btn-run btn-sm" id="btn-scan">Run Full Scan</button>
+            <div id="desert-spinner" style="display:none"><div class="spinner"></div></div>
+          </div>
+        </div>
+        <div class="card-body" style="padding:10px 14px">
+          <p style="font-size:12px;color:var(--muted)">
+            Scans all 10,000+ facilities grouped by PIN code, city, and state.
+            Regions missing high-acuity specialties are ranked by severity with bootstrap confidence intervals.
+          </p>
+        </div>
+      </div>
+      <div class="g4 mb">
+        <div class="metric"><div class="metric-k">Deserts Found</div><div class="metric-v red" id="d-count">—</div></div>
+        <div class="metric"><div class="metric-k">Critical Priority</div><div class="metric-v red" id="d-critical">—</div></div>
+        <div class="metric"><div class="metric-k">High Priority</div><div class="metric-v orange" id="d-high">—</div></div>
+        <div class="metric"><div class="metric-k">Confidence Band</div><div class="metric-v blue mono" id="d-conf">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Region Table</span>
+          <span style="font-size:10.5px;color:var(--dim)">Sorted by missing specialties</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="tbl-scroll">
+            <table id="desert-tbl">
+              <thead>
+                <tr>
+                  <th>Priority</th><th>PIN</th><th>City</th><th>State</th>
+                  <th>Missing Specialties</th><th>Facilities</th>
+                  <th>Severity</th><th>SI Interval</th>
+                </tr>
+              </thead>
+              <tbody id="desert-tbody">
+                <tr><td colspan="8" style="color:var(--muted);padding:20px;text-align:center">Click "Run Full Scan" to load desert regions.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ MAP PANEL ════════ -->
+    <div id="panel-map" class="panel">
+      <div class="map-bar">
+        <button class="btn btn-sm btn-run" id="btn-load-deserts">◎ Load Desert Regions</button>
+        <button class="btn btn-sm" id="btn-load-facilities">⊕ Load Facility Markers</button>
+        <button class="btn btn-sm btn-ghost" id="btn-clear-map">✕ Clear</button>
+        <span style="width:1px;height:18px;background:var(--border);flex-shrink:0"></span>
+        <input class="map-filter-input" id="map-state-filter" placeholder="Filter by state…" title="Type a state name to filter facility markers"/>
+        <button class="btn btn-sm" id="btn-apply-filter" title="Apply state filter">Filter</button>
+        <span class="map-status" id="map-status">Click a button to load data onto the crisis map.</span>
       </div>
       <div id="leaflet-map"></div>
     </div>
 
-    <!-- ════════════════ STATS PANEL ════════════════ -->
-    <div id="panel-stats" class="tab-panel">
-      <div class="grid-2" style="margin-bottom:12px">
+    <!-- ════════ STATS PANEL ════════ -->
+    <div id="panel-stats" class="panel">
+      <div class="g4 mb">
+        <div class="metric"><div class="metric-k">Total Facilities</div><div class="metric-v blue" id="st-total">—</div></div>
+        <div class="metric"><div class="metric-k">States Covered</div><div class="metric-v" id="st-states">—</div></div>
+        <div class="metric"><div class="metric-k">Cities Covered</div><div class="metric-v" id="st-cities">—</div></div>
+        <div class="metric"><div class="metric-k">GPS Coverage</div><div class="metric-v green" id="st-geo">—</div></div>
+      </div>
+      <div class="g2">
         <div class="card">
-          <div class="card-title">Dataset Overview</div>
-          <div class="grid-2" style="gap:8px">
-            <div class="metric"><div class="k">Total Facilities</div><div class="v blue" id="st-total">—</div></div>
-            <div class="metric"><div class="k">States Covered</div><div class="v" id="st-states">—</div></div>
-            <div class="metric"><div class="k">Cities Covered</div><div class="v" id="st-cities">—</div></div>
-            <div class="metric"><div class="k">With GPS Coords</div><div class="v green" id="st-geo">—</div></div>
-          </div>
-          <div style="margin-top:10px">
-            <div class="metric"><div class="k">Overall Data Completeness</div><div class="v" id="st-comp">—</div></div>
-          </div>
+          <div class="card-head"><span class="card-title">Completeness Distribution</span></div>
+          <div class="card-body" id="comp-dist"><p style="color:var(--muted);font-size:12px">Loading…</p></div>
+          <div class="card-foot"><p style="font-size:11px;color:var(--muted)" id="st-note"></p></div>
         </div>
         <div class="card">
-          <div class="card-title">Completeness Distribution</div>
-          <div style="display:flex;flex-direction:column;gap:10px" id="comp-dist">
-            <p style="color:var(--muted);font-size:.83rem">Loading…</p>
-          </div>
-          <p style="font-size:.75rem;color:var(--muted);margin-top:10px;line-height:1.5" id="st-note"></p>
+          <div class="card-head"><span class="card-title">Field Fill Rates</span></div>
+          <div class="card-body" id="fill-rates"><p style="color:var(--muted);font-size:12px">Loading…</p></div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">Field Fill Rates</div>
-        <div id="fill-rates" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-          <p style="color:var(--muted);font-size:.83rem">Loading…</p>
+      <div class="card" style="margin-top:10px">
+        <div class="card-head"><span class="card-title">Runtime Configuration</span></div>
+        <div class="card-body">
+          <div class="g4" style="gap:8px">
+            <div class="metric"><div class="metric-k">LLM Backend</div><div class="metric-v blue mono" id="rt-backend">—</div></div>
+            <div class="metric"><div class="metric-k">Chat Model</div><div class="metric-v mono" style="font-size:11px" id="rt-model">—</div></div>
+            <div class="metric"><div class="metric-k">Embeddings</div><div class="metric-v mono" style="font-size:11px" id="rt-embed">—</div></div>
+            <div class="metric"><div class="metric-k">Tavily</div><div class="metric-v" id="rt-tavily">—</div></div>
+          </div>
+          <div class="g2" style="gap:8px;margin-top:8px">
+            <div class="metric"><div class="metric-k">Data Source</div><div class="metric-v mono" style="font-size:11px" id="rt-src">—</div></div>
+            <div class="metric"><div class="metric-k">Databricks</div><div class="metric-v mono" style="font-size:11px" id="rt-db">—</div></div>
+          </div>
         </div>
       </div>
     </div>
 
-  </div><!-- /body -->
+  </div><!-- /content -->
 </div><!-- /shell -->
 
 <script>
-// ── Tab switching ──────────────────────────────────────────────────────────
-const tabs = document.querySelectorAll(".tab-btn");
-const panels = document.querySelectorAll(".tab-panel");
-tabs.forEach(btn => {
-  btn.addEventListener("click", () => {
-    tabs.forEach(b => b.classList.remove("active"));
-    panels.forEach(p => p.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
-    if (btn.dataset.tab === "map" && !mapInitialized) initMap();
-    if (btn.dataset.tab === "stats" && !statsLoaded) loadStats();
-  });
-});
-
-// ── Helpers ────────────────────────────────────────────────────────────────
+/* ── helpers ── */
+const $ = id => document.getElementById(id);
 function esc(s) {
-  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-async function fetchJson(url, opts={}) {
+async function api(url, opts={}) {
   const r = await fetch(url, opts);
   const d = await r.json();
-  if (!r.ok) throw new Error(d.error || d.response || "HTTP " + r.status);
+  if (!r.ok) throw new Error(d.error || d.response || 'HTTP '+r.status);
   return d;
 }
 
-// ── System health ──────────────────────────────────────────────────────────
+/* ── tab switching ── */
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    $('panel-'+t.dataset.tab).classList.add('active');
+    if (t.dataset.tab === 'map' && !mapInit) initMap();
+    if (t.dataset.tab === 'stats' && !statsInit) loadStats();
+    if (t.dataset.tab === 'desert' && !desertInit) {}
+  });
+});
+
+/* ── system health ── */
 async function loadHealth() {
   try {
-    const h = await fetchJson("/health");
-    document.getElementById("sys-dot").classList.add("ok");
-    document.getElementById("sys-line").textContent = "System online · " + (h.llm_backend || "local");
-    document.getElementById("m-backend").textContent = h.llm_backend || "—";
-    document.getElementById("m-model").textContent = h.chat_model || "heuristic";
-    document.getElementById("m-embed").textContent = h.embeddings || "—";
-    document.getElementById("m-tavily").textContent = h.tavily_configured ? "✓ Enabled" : "× Disabled";
-    document.getElementById("m-datasource").textContent = (h.databricks?.configured ? "Databricks Unity Catalog" : "Local Excel") + (h.data_source ? " · " + h.data_source : "");
+    const h = await api('/health');
+    $('sys-dot').className = 'sys-dot ok';
+    $('sys-txt').textContent = (h.llm_backend||'local') + ' · online';
+    // stats tab runtime
+    $('rt-backend').textContent = h.llm_backend || '—';
+    $('rt-model').textContent   = h.chat_model  || 'heuristic';
+    $('rt-embed').textContent   = h.embeddings  || '—';
+    $('rt-tavily').textContent  = h.tavily_configured ? '✓ enabled' : '× disabled';
+    $('rt-src').textContent     = h.data_source || '—';
+    const db = h.databricks || {};
+    $('rt-db').textContent = db.configured ? db.host?.replace('https://','') : 'not configured';
   } catch {
-    document.getElementById("sys-line").textContent = "Health check failed";
+    $('sys-dot').className = 'sys-dot err';
+    $('sys-txt').textContent = 'offline';
   }
 }
 loadHealth();
 
-// ── Trust gauge ────────────────────────────────────────────────────────────
-function setGauge(score) {
-  const arc = document.getElementById("gauge-arc");
-  const txt = document.getElementById("gauge-text");
-  const total = 172;
-  const offset = total - (score ?? 0) * total;
-  arc.style.strokeDashoffset = isNaN(offset) ? total : offset;
-  txt.textContent = (score != null) ? score.toFixed(2) : "—";
+/* ── query history (localStorage) ── */
+const HISTORY_KEY = 'tc_history';
+function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'); } catch { return []; } }
+function pushHistory(msg) {
+  const h = getHistory().filter(x => x.text !== msg).slice(0,19);
+  h.unshift({ text: msg, ts: new Date().toISOString() });
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+  renderHistory();
+}
+function renderHistory() {
+  const panel = $('history-panel');
+  const empty = $('hist-empty');
+  const items = getHistory();
+  if (!panel) return;
+  if (!items.length) {
+    if (empty) empty.style.display = '';
+    // remove old items
+    panel.querySelectorAll('.history-item').forEach(x => x.remove());
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  panel.querySelectorAll('.history-item').forEach(x => x.remove());
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    const ago = formatAgo(item.ts);
+    div.innerHTML = `<div class="h-text">${esc(item.text)}</div><div class="h-time">${ago}</div>`;
+    div.addEventListener('click', () => {
+      $('q').value = item.text;
+      $('history-panel').classList.remove('open');
+      runQuery();
+    });
+    panel.appendChild(div);
+  });
+}
+function formatAgo(iso) {
+  try {
+    const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+    if (diff < 60)   return diff + 's ago';
+    if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+    return Math.floor(diff/3600) + 'h ago';
+  } catch { return ''; }
 }
 
-// ── Render query response ──────────────────────────────────────────────────
-function renderResponse(data) {
-  // Answer
-  document.getElementById("answer").textContent = data.response || "(No response)";
+// Toggle history panel
+$('btn-history').addEventListener('click', () => {
+  renderHistory();
+  $('history-panel').classList.toggle('open');
+});
+// Close if user clicks outside
+document.addEventListener('click', e => {
+  const panel = $('history-panel');
+  const btn   = $('btn-history');
+  if (panel && !panel.contains(e.target) && e.target !== btn)
+    panel.classList.remove('open');
+});
+renderHistory(); // seed on load
 
-  // Intent tag
-  const tag = document.getElementById("intent-tag");
-  tag.textContent = data.intent || "—";
+/* ── gauge ── */
+function setGauge(score) {
+  const arc = $('gauge-arc'), txt = $('gauge-txt');
+  const total = 141;
+  const off = score != null ? total - score * total : total;
+  arc.style.strokeDashoffset = off;
+  txt.textContent = score != null ? score.toFixed(2) : '—';
+}
+
+/* ── render query response ── */
+function renderResponse(data) {
+  // Answer with typewriter
+  const box = $('answer');
+  const text = data.response || '(No response)';
+  box.textContent = '';
+  box.classList.add('typing');
+  let i = 0;
+  const iv = setInterval(() => {
+    box.textContent += text[i++] || '';
+    if (i >= text.length) { clearInterval(iv); box.classList.remove('typing'); }
+  }, 8);
+
+  // Intent badge
+  $('intent-badge').textContent = data.intent || '—';
+
+  // Answer metadata chips
+  const meta = $('ans-meta');
+  if (meta) {
+    const chips = [];
+    if (data.intent)           chips.push(`<span class="meta-chip blue">intent:${esc(data.intent)}</span>`);
+    if (data.confidence_band)  chips.push(`<span class="meta-chip ${data.confidence_band==='high'?'green':data.confidence_band==='medium'?'warn':''}">${esc(data.confidence_band)}</span>`);
+    const n = (data.source_citations||[]).length;
+    if (n)                     chips.push(`<span class="meta-chip">${n} cite${n!==1?'s':''}</span>`);
+    const steps = (data.chain_of_thought||[]).length;
+    if (steps)                 chips.push(`<span class="meta-chip">${steps} steps</span>`);
+    if (data.trust_score!=null) chips.push(`<span class="meta-chip">trust ${data.trust_score.toFixed(2)}</span>`);
+    meta.innerHTML = chips.join('');
+  }
 
   // Gauge
   setGauge(data.confidence_score);
-  document.getElementById("gauge-band").textContent = data.confidence_band || "—";
-
-  // Trust
-  const ts = data.trust_score;
-  document.getElementById("trust-score").textContent = ts != null ? ts.toFixed(3) : "—";
+  $('conf-band-chip').textContent = data.confidence_band || '—';
+  $('trust-val').textContent = data.trust_score != null ? data.trust_score.toFixed(3) : '—';
 
   // Flags
-  const flags = Array.isArray(data.trust_flags) ? data.trust_flags : [];
-  document.getElementById("flags-count").textContent = flags.length;
-  const flagsEl = document.getElementById("trust-flags");
+  const flags = data.trust_flags || [];
+  $('flags-count').textContent = flags.length || '0';
+  const fl = $('flags-list');
   if (!flags.length) {
-    flagsEl.innerHTML = "<div class='flag-item ok'>No contradictions detected</div>";
+    fl.innerHTML = '<div class="flag-item flag-ok"><span class="flag-icon">✓</span>No contradictions detected</div>';
   } else {
-    flagsEl.innerHTML = flags.map(f => `<div class='flag-item bad'>${esc(f)}</div>`).join("");
+    fl.innerHTML = flags.map(f => `<div class="flag-item flag-bad"><span class="flag-icon">⚑</span>${esc(f)}</div>`).join('');
   }
 
-  // Confidence interval bar
+  // CI bar
   const ci = data.confidence_interval;
   if (ci && ci.lower != null) {
-    document.getElementById("ci-wrap").style.display = "";
-    document.getElementById("ci-fill").style.width = (ci.estimate * 100) + "%";
-    document.getElementById("ci-marker").style.left = (ci.estimate * 100) + "%";
-    document.getElementById("ci-lo").textContent = ci.lower.toFixed(3);
-    document.getElementById("ci-hi").textContent = ci.upper.toFixed(3);
+    $('ci-wrap').style.display = '';
+    $('ci-fill').style.width = (ci.estimate*100)+'%';
+    $('ci-ptr').style.left  = (ci.estimate*100)+'%';
+    $('ci-lo').textContent = ci.lower.toFixed(3);
   }
 
   // Reason codes
-  const codes = Array.isArray(data.reason_codes) ? data.reason_codes : [];
-  document.getElementById("reason-codes").innerHTML = codes.map(c => `<span class="code-tag">${esc(c)}</span>`).join("");
+  const codes = data.reason_codes || [];
+  $('reason-codes').innerHTML = codes.map(c => `<span class="code-tag">${esc(c)}</span>`).join('');
 
   // Chain of thought
-  const steps = Array.isArray(data.chain_of_thought) ? data.chain_of_thought : [];
-  const cot = document.getElementById("cot");
-  cot.innerHTML = !steps.length
-    ? "<li style='color:var(--muted)'>No trace available.</li>"
-    : steps.map(s => `<li>${esc(s)}</li>`).join("");
+  const steps = data.chain_of_thought || [];
+  $('cot-count').textContent = steps.length + ' step' + (steps.length!==1?'s':'');
+  $('cot').innerHTML = !steps.length
+    ? '<li class="cot-item"><span class="cot-arrow">→</span><span style="color:var(--dim)">No trace.</span></li>'
+    : steps.map((s,i) => `<li class="cot-item"><span class="cot-step-num">${String(i+1).padStart(2,'0')}</span><span class="cot-arrow">→</span><span>${esc(s)}</span></li>`).join('');
 
   // Citations
-  const cites = Array.isArray(data.source_citations) ? data.source_citations : [];
-  const citEl = document.getElementById("citations");
-  if (!cites.length) {
-    citEl.innerHTML = "<p style='color:var(--muted);font-size:.83rem'>No evidence snippets returned.</p>";
-  } else {
-    citEl.innerHTML = cites.map(c => `
-      <div class='cite-card'>
-        <div><span class='cite-name'>${esc(c.facility_name||"Unknown")}</span>
-        <span class='cite-pin'>PIN ${esc(c.pin||"—")}</span></div>
-        <div class='cite-text'>${esc(c.evidence_snippet||c.trust_evidence_snippet||"—")}</div>
-      </div>`).join("");
-  }
+  const cites = data.source_citations || [];
+  $('cite-count').textContent = cites.length + ' citation' + (cites.length!==1?'s':'');
+  $('citations').innerHTML = !cites.length
+    ? '<p style="font-size:12px;color:var(--muted)">No evidence returned.</p>'
+    : cites.map(c => `<div class="cite-card">
+        <div class="cite-header">
+          <span class="cite-name">${esc(c.facility_name||'Unknown')}</span>
+          <span class="cite-meta">PIN ${esc(c.pin||'—')}</span>
+          ${c.city ? `<span class="cite-meta">${esc(c.city)}, ${esc(c.state||'')}</span>` : ''}
+        </div>
+        <div class="cite-text">${esc(c.evidence_snippet||c.trust_evidence_snippet||'—')}</div>
+      </div>`).join('');
 }
 
-// ── Run query ──────────────────────────────────────────────────────────────
+/* ── run query ── */
 async function runQuery() {
-  const msg = document.getElementById("q").value.trim();
+  const msg = $('q').value.trim();
   if (!msg) return;
-  const overlay = document.getElementById("query-loading");
-  const btn = document.getElementById("btn-run");
-  overlay.classList.add("show");
-  btn.disabled = true;
-  btn.textContent = "Running…";
+  $('btn-run').disabled = true;
+  $('btn-run').textContent = 'Running…';
+  $('run-spinner').style.display = 'flex';
+  $('answer').textContent = 'Reasoning through 10,000+ facility records…';
+  $('answer').classList.add('typing');
+  pushHistory(msg);
+
   try {
-    const data = await fetchJson("/chat", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({message: msg}),
+    const data = await api('/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message:msg}),
     });
     renderResponse(data);
   } catch(e) {
-    document.getElementById("answer").textContent = "Error: " + e.message;
+    $('answer').textContent = '⚠ Error: ' + e.message;
+    $('answer').classList.remove('typing');
   } finally {
-    overlay.classList.remove("show");
-    btn.disabled = false;
-    btn.textContent = "Run Query";
+    $('btn-run').disabled = false;
+    $('btn-run').textContent = 'Run Query';
+    $('run-spinner').style.display = 'none';
   }
 }
 
-document.getElementById("btn-run").addEventListener("click", runQuery);
-document.getElementById("q").addEventListener("keydown", e => { if(e.key==="Enter" && e.ctrlKey) runQuery(); });
-document.getElementById("btn-clear").addEventListener("click", () => {
-  document.getElementById("q").value = "";
-  document.getElementById("answer").textContent = "Cleared.";
+$('btn-run').addEventListener('click', runQuery);
+$('q').addEventListener('keydown', e => { if(e.key==='Enter' && e.ctrlKey) runQuery(); });
+$('btn-clear').addEventListener('click', () => {
+  $('q').value = '';
+  $('answer').textContent = 'Cleared. Ready for a new query.';
+  $('answer').classList.remove('typing');
   setGauge(null);
-  document.getElementById("trust-flags").innerHTML = "";
-  document.getElementById("reason-codes").innerHTML = "";
-  document.getElementById("cot").innerHTML = "<li>No steps yet.</li>";
-  document.getElementById("citations").innerHTML = "<p style='color:var(--muted);font-size:.84rem'>Evidence snippets appear here after a query.</p>";
+  $('trust-val').textContent = '—';
+  $('flags-count').textContent = '—';
+  $('flags-list').innerHTML = '';
+  $('reason-codes').innerHTML = '';
+  $('cot').innerHTML = '<li class="cot-item"><span class="cot-arrow">→</span><span style="color:var(--dim)">No steps yet.</span></li>';
+  $('citations').innerHTML = '<p style="font-size:12px;color:var(--muted)">Evidence snippets appear here after a query.</p>';
+  $('ci-wrap').style.display = 'none';
 });
-document.querySelectorAll("#panel-query .quick-btn").forEach(b => {
-  b.addEventListener("click", () => { document.getElementById("q").value = b.textContent; runQuery(); });
+document.querySelectorAll('.quick-tag').forEach(b => {
+  b.addEventListener('click', () => { $('q').value = b.textContent; runQuery(); });
 });
 
-// ── Audit ──────────────────────────────────────────────────────────────────
+/* ── audit ── */
+function fillAudit(name) { $('audit-name').value = name; runAudit(); }
 async function runAudit() {
-  const name = document.getElementById("audit-name").value.trim();
+  const name = $('audit-name').value.trim();
   if (!name) return;
-  const overlay = document.getElementById("audit-loading");
-  const btn = document.getElementById("btn-audit");
-  overlay.classList.add("show"); btn.disabled = true; btn.textContent = "Auditing…";
-
+  $('btn-audit').disabled = true;
+  $('a-spinner').style.display = 'flex';
+  $('audit-caps').innerHTML = '<p style="color:var(--muted);font-size:12px">Auditing…</p>';
   try {
-    const data = await fetchJson("/audit", {
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({facility_name: name}),
+    const data = await api('/audit', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({facility_name:name}),
     });
     const ar = data.audit_result || {};
-
-    // Confidence metrics
-    document.getElementById("a-conf").textContent = data.confidence_score?.toFixed(3) ?? "—";
-    document.getElementById("a-band").textContent = data.confidence_band || "—";
+    $('a-conf').textContent = data.confidence_score?.toFixed(3) ?? '—';
+    $('a-band').textContent = data.confidence_band || '—';
     const ci = data.confidence_interval || {};
-    document.getElementById("a-ci-lo").textContent = ci.lower?.toFixed(3) ?? "—";
-    document.getElementById("a-ci-hi").textContent = ci.upper?.toFixed(3) ?? "—";
+    $('a-ci-lo').textContent = ci.lower?.toFixed(3) ?? '—';
+    $('a-ci-hi').textContent = ci.upper?.toFixed(3) ?? '—';
+    $('a-ratio').textContent = ar.verification_ratio != null ? (ar.verification_ratio*100).toFixed(0)+'%' : '—';
+    $('a-docs').textContent  = ar.num_doctors ?? '—';
 
-    // Capability pills
-    const capsEl = document.getElementById("audit-caps");
-    const claimed = ar.claimed || [];
-    const verified = ar.verified || [];
-    const missing = ar.missing || [];
-    if (!claimed.length) {
-      capsEl.innerHTML = "<p style='color:var(--muted);font-size:.83rem'>No capabilities extracted.</p>";
-    } else {
-      const verifiedSet = new Set(verified);
-      const missingSet = new Set(missing);
-      capsEl.innerHTML = "<div style='display:flex;flex-wrap:wrap;gap:6px'>" +
-        claimed.map(c => {
-          if (verifiedSet.has(c)) return `<span class='audit-pill pill-ok'>✓ ${esc(c)}</span>`;
-          if (missingSet.has(c)) return `<span class='audit-pill pill-bad'>⚑ ${esc(c)}</span>`;
-          return `<span class='audit-pill pill-warn'>? ${esc(c)}</span>`;
-        }).join("") + "</div>";
+    const claimed = ar.claimed||[], verified = new Set(ar.verified||[]), missing = new Set(ar.missing||[]);
+    $('audit-caps').innerHTML = !claimed.length
+      ? '<p style="color:var(--muted);font-size:12px">No capabilities extracted.</p>'
+      : `<div class="cap-grid">${claimed.map(c => {
+          if (verified.has(c)) return `<span class="cap-pill cap-ok">✓ ${esc(c)}</span>`;
+          if (missing.has(c))  return `<span class="cap-pill cap-bad">⚑ ${esc(c)}</span>`;
+          return `<span class="cap-pill cap-warn">? ${esc(c)}</span>`;
+        }).join('')}</div>`;
+
+    // Populate missing capabilities breakdown
+    const missArr = ar.missing || [];
+    const missingEl = $('audit-missing');
+    if (missingEl) {
+      if (!missArr.length) {
+        missingEl.innerHTML = '<div class="flag-item flag-ok"><span class="flag-icon">✓</span><span>All claimed capabilities have supporting evidence.</span></div>';
+      } else {
+        missingEl.innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--danger);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Missing Evidence (${missArr.length})</div>`
+          + missArr.map(m => `<div class="flag-item flag-bad"><span class="flag-icon">⚑</span><span>${esc(m)} — claimed but not supported by facility records</span></div>`).join('');
+      }
     }
 
-    // Audit meta
-    document.getElementById("audit-meta").style.display = "";
-    document.getElementById("a-doctors").textContent = ar.num_doctors ?? "—";
-    document.getElementById("a-beds").textContent = ar.bed_capacity ?? "—";
-    document.getElementById("a-ratio").textContent = ar.verification_ratio != null ? (ar.verification_ratio * 100).toFixed(0) + "%" : "—";
-    document.getElementById("a-alts").textContent = (ar.alternatives||[]).length || "—";
+    $('audit-cot').innerHTML = (data.chain_of_thought||[])
+      .map((s,i) => `<li class="cot-item"><span class="cot-step-num">${String(i+1).padStart(2,'0')}</span><span class="cot-arrow">→</span><span>${esc(s)}</span></li>`).join('') ||
+      '<li class="cot-item"><span style="color:var(--dim)">No trace.</span></li>';
 
-    // CoT
-    const steps = data.chain_of_thought || [];
-    document.getElementById("audit-cot").innerHTML = steps.length
-      ? steps.map(s=>`<li>${esc(s)}</li>`).join("")
-      : "<li style='color:var(--muted)'>No trace.</li>";
-
-    // Citations
-    const cites = data.source_citations || [];
-    document.getElementById("audit-cites").innerHTML = cites.map(c => `
-      <div class='cite-card'>
-        <div><span class='cite-name'>${esc(c.facility_name||"Unknown")}</span>
-        <span class='cite-pin'>PIN ${esc(c.pin||"—")}</span></div>
-        <div class='cite-text'>${esc(c.evidence_snippet||"—")}</div>
-      </div>`).join("");
-
+    $('audit-cites').innerHTML = (data.source_citations||[]).map(c => `<div class="cite-card">
+      <div class="cite-header"><span class="cite-name">${esc(c.facility_name||'—')}</span><span class="cite-meta">PIN ${esc(c.pin||'—')}</span></div>
+      <div class="cite-text">${esc(c.evidence_snippet||'—')}</div>
+    </div>`).join('');
   } catch(e) {
-    document.getElementById("audit-caps").innerHTML = `<p style='color:var(--bad)'>Error: ${esc(e.message)}</p>`;
+    $('audit-caps').innerHTML = `<p style="color:var(--danger);font-size:12px">Error: ${esc(e.message)}</p>`;
   } finally {
-    overlay.classList.remove("show"); btn.disabled = false; btn.textContent = "Audit";
+    $('btn-audit').disabled = false;
+    $('a-spinner').style.display = 'none';
   }
 }
-document.getElementById("btn-audit").addEventListener("click", runAudit);
-document.getElementById("audit-name").addEventListener("keydown", e => { if(e.key==="Enter") runAudit(); });
+$('btn-audit').addEventListener('click', runAudit);
+$('audit-name').addEventListener('keydown', e => { if(e.key==='Enter') runAudit(); });
 
-// ── Leaflet Map ────────────────────────────────────────────────────────────
-let mapInitialized = false;
-let leafletMap, desertLayer, facilityLayer;
+/* ── desert scan ── */
+let desertInit = false;
+$('btn-scan').addEventListener('click', async () => {
+  $('btn-scan').disabled = true;
+  $('desert-spinner').style.display = 'flex';
+  try {
+    const data = await api('/desert');
+    const regions = data.desert_regions || [];
+    desertInit = true;
+    $('d-count').textContent    = regions.length;
+    $('d-critical').textContent = regions.filter(r=>r.intervention_priority==='critical').length;
+    $('d-high').textContent     = regions.filter(r=>r.intervention_priority==='high').length;
+    $('d-conf').textContent     = data.confidence_band || '—';
 
+    const tbody = $('desert-tbody');
+    tbody.innerHTML = '';
+    if (!regions.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="color:var(--muted);padding:20px;text-align:center">No desert regions found.</td></tr>';
+    } else {
+      for (const r of regions.slice(0,60)) {
+        const si = r.severity_interval || {};
+        const pClass = {critical:'p-critical',high:'p-high',medium:'p-medium',low:'p-low'}[r.intervention_priority]||'';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="${pClass}">${r.intervention_priority||'—'}</span></td>
+          <td style="font-family:var(--mono);font-size:11px">${esc(r.pin||'—')}</td>
+          <td>${esc(r.city||'—')}</td>
+          <td>${esc(r.state||'—')}</td>
+          <td style="font-size:11px;color:var(--muted)">${(r.missing_specialties||[]).join(', ')||'—'}</td>
+          <td style="text-align:center">${r.facility_count||0}</td>
+          <td style="font-family:var(--mono);font-size:11px">${((r.severity_index||0)*100).toFixed(0)}%</td>
+          <td style="font-family:var(--mono);font-size:10.5px;color:var(--dim)">[${((si.lower||0)*100).toFixed(0)}%–${((si.upper||0)*100).toFixed(0)}%]</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+  } catch(e) {
+    $('desert-tbody').innerHTML = `<tr><td colspan="8" style="color:var(--danger);padding:16px">Error: ${esc(e.message)}</td></tr>`;
+  } finally {
+    $('btn-scan').disabled = false;
+    $('desert-spinner').style.display = 'none';
+  }
+});
+
+/* ── Leaflet map ── */
+let mapInit=false, leaflet, desertLyr, facilityLyr;
 function priorityColor(p) {
-  if (p === "critical") return "#ef4444";
-  if (p === "high")     return "#f59e0b";
-  if (p === "medium")   return "#eab308";
-  return "#22c55e";
+  return {critical:'#f85149', high:'#d29922', medium:'#4493f8', low:'#3fb950'}[p] || '#666';
 }
-
 function initMap() {
-  mapInitialized = true;
-  leafletMap = L.map("leaflet-map", {
-    center: [20.5937, 78.9629],
-    zoom: 5,
-    zoomControl: true,
-  });
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors",
-    maxZoom: 18,
-  }).addTo(leafletMap);
-
+  mapInit = true;
+  leaflet = L.map('leaflet-map', { center:[20.5937,78.9629], zoom:5 });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap', maxZoom:18,
+  }).addTo(leaflet);
   // Legend
-  const legend = L.control({position: "bottomright"});
-  legend.onAdd = () => {
-    const div = L.DomUtil.create("div", "legend-box");
-    div.innerHTML = `
-      <b style="color:#f0f4ff;font-size:.8rem;display:block;margin-bottom:6px">Desert Priority</b>
-      <div class="leg-row"><span class="leg-dot" style="background:#ef4444"></span>Critical</div>
-      <div class="leg-row"><span class="leg-dot" style="background:#f59e0b"></span>High</div>
-      <div class="leg-row"><span class="leg-dot" style="background:#eab308"></span>Medium</div>
-      <div class="leg-row"><span class="leg-dot" style="background:#22c55e"></span>Low / Facility</div>`;
-    return div;
+  const leg = L.control({position:'bottomright'});
+  leg.onAdd = () => {
+    const d = L.DomUtil.create('div','legend-box');
+    d.innerHTML = `<b style="color:var(--text);font-size:11px;display:block;margin-bottom:6px">Desert Priority</b>
+      <div class="leg-row"><span class="leg-dot" style="background:#f85149"></span>Critical</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#d29922"></span>High</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#4493f8"></span>Medium</div>
+      <div class="leg-row"><span class="leg-dot" style="background:#3fb950"></span>Low / Facility</div>`;
+    return d;
   };
-  legend.addTo(leafletMap);
+  leg.addTo(leaflet);
 }
-
-document.getElementById("btn-load-deserts").addEventListener("click", async () => {
-  if (!mapInitialized) initMap();
-  const status = document.getElementById("map-status");
-  status.textContent = "Loading desert regions…";
-  if (desertLayer) { leafletMap.removeLayer(desertLayer); desertLayer = null; }
-
+$('btn-load-deserts').addEventListener('click', async () => {
+  if (!mapInit) initMap();
+  $('map-status').textContent = 'Loading desert regions…';
+  if (desertLyr) { leaflet.removeLayer(desertLyr); desertLyr=null; }
   try {
-    const geo = await fetchJson("/map");
-    desertLayer = L.layerGroup();
-    let count = 0;
-    for (const f of (geo.features || [])) {
-      const p = f.properties || {};
-      const [lon, lat] = f.geometry.coordinates;
-      const color = priorityColor(p.intervention_priority);
-      const si = p.severity_interval || {};
-      const missing = (p.missing_specialties || []).join(", ") || "None";
-      const circle = L.circleMarker([lat, lon], {
-        radius: 6 + (p.severity_index || 0) * 8,
-        fillColor: color, color: color,
-        fillOpacity: 0.75, weight: 1.5,
-      });
-      circle.bindPopup(`
-        <b style="color:#111">${p.city || "—"}, ${p.state || "—"}</b><br/>
-        <span style="font-size:12px">PIN: ${p.pin || "—"}</span><br/>
-        Priority: <b>${p.intervention_priority || "—"}</b><br/>
-        Severity: ${((p.severity_index||0)*100).toFixed(0)}%
-        [${(si.lower||0)*100|0}%–${(si.upper||0)*100|0}%]<br/>
-        Facilities: ${p.facility_count || 0}<br/>
-        Missing: <span style="color:#dc2626">${missing}</span>
-      `);
-      desertLayer.addLayer(circle);
-      count++;
+    const geo = await api('/map');
+    desertLyr = L.layerGroup();
+    let n=0;
+    for (const f of geo.features||[]) {
+      const p=f.properties||{}, [lon,lat]=f.geometry.coordinates;
+      const col=priorityColor(p.intervention_priority);
+      const si=p.severity_interval||{};
+      const miss=(p.missing_specialties||[]).join(', ')||'None';
+      L.circleMarker([lat,lon],{radius:5+(p.severity_index||0)*9,fillColor:col,color:col,fillOpacity:.75,weight:1.5})
+       .bindPopup(`<div style="font-family:Inter,sans-serif;font-size:12px;line-height:1.6">
+          <b>${p.city||'—'}, ${p.state||'—'}</b><br/>
+          PIN: <code>${p.pin||'—'}</code><br/>
+          Priority: <b>${p.intervention_priority||'—'}</b><br/>
+          Severity: ${((p.severity_index||0)*100).toFixed(0)}% [${((si.lower||0)*100).toFixed(0)}%–${((si.upper||0)*100).toFixed(0)}%]<br/>
+          Facilities: ${p.facility_count||0}<br/>
+          Missing: <span style="color:#f85149">${miss}</span>
+        </div>`)
+       .addTo(desertLyr);
+      n++;
     }
-    desertLayer.addTo(leafletMap);
-    status.textContent = `Loaded ${count} desert regions.`;
-  } catch(e) {
-    status.textContent = "Error: " + e.message;
-  }
+    desertLyr.addTo(leaflet);
+    $('map-status').textContent = `${n} desert regions loaded.`;
+  } catch(e) { $('map-status').textContent = 'Error: '+e.message; }
 });
-
-document.getElementById("btn-load-facilities").addEventListener("click", async () => {
-  if (!mapInitialized) initMap();
-  const status = document.getElementById("map-status");
-  status.textContent = "Loading facility markers (up to 2000)…";
-  if (facilityLayer) { leafletMap.removeLayer(facilityLayer); facilityLayer = null; }
-
+async function loadFacilities(stateFilter) {
+  if (!mapInit) initMap();
+  const state = stateFilter || ($('map-state-filter') ? $('map-state-filter').value.trim() : '');
+  const qs = state ? `?state=${encodeURIComponent(state)}&limit=2000` : '?limit=2000';
+  $('map-status').textContent = state ? `Loading facilities in "${state}"…` : 'Loading facility markers (up to 2000)…';
+  if (facilityLyr) { leaflet.removeLayer(facilityLyr); facilityLyr=null; }
   try {
-    const geo = await fetchJson("/facilities/geojson?limit=2000");
-    const cluster = L.markerClusterGroup({
-      maxClusterRadius: 40,
-      iconCreateFunction: cluster => L.divIcon({
-        html: `<div style="background:#1d4ed8;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:2px solid #3b82f6">${cluster.getChildCount()}</div>`,
-        iconSize: [32,32], iconAnchor: [16,16],
-      }),
-    });
-    for (const f of (geo.features || [])) {
-      const p = f.properties || {};
-      const [lon, lat] = f.geometry.coordinates;
-      const comp = (p.completeness || 0);
-      const dotColor = comp >= 0.7 ? "#22c55e" : comp >= 0.4 ? "#f59e0b" : "#ef4444";
-      const marker = L.circleMarker([lat, lon], {
-        radius: 4, fillColor: dotColor, color: "#0f172a",
-        fillOpacity: 0.85, weight: 1,
-      });
-      marker.bindPopup(`
-        <b style="color:#111">${p.name || "—"}</b><br/>
-        <span style="font-size:12px">${p.city||""}, ${p.state||""}</span><br/>
-        Type: ${p.type || "—"} · PIN: ${p.pin||"—"}<br/>
-        Completeness: ${(comp*100).toFixed(0)}%`);
-      cluster.addLayer(marker);
+    const geo = await api('/facilities/geojson'+qs);
+    const cluster = L.markerClusterGroup({ maxClusterRadius:40, disableClusteringAtZoom:10 });
+    for (const f of geo.features||[]) {
+      const p=f.properties||{}, [lon,lat]=f.geometry.coordinates;
+      const col = p.completeness>=.7 ? '#3fb950' : p.completeness>=.4 ? '#d29922' : '#f85149';
+      L.circleMarker([lat,lon],{radius:4,fillColor:col,color:'#0a0a0a',fillOpacity:.85,weight:1})
+       .bindPopup(`<div style="font-family:Inter,sans-serif;font-size:12px">
+          <b>${p.name||'—'}</b><br/>
+          ${p.city||''}, ${p.state||''}<br/>
+          PIN: ${p.pin||'—'} · ${p.type||'—'}<br/>
+          Completeness: ${(p.completeness*100).toFixed(0)}%
+        </div>`)
+       .addTo(cluster);
     }
-    facilityLayer = cluster;
-    leafletMap.addLayer(facilityLayer);
-    status.textContent = `Loaded ${geo.features?.length || 0} facility markers.`;
-  } catch(e) {
-    status.textContent = "Error: " + e.message;
-  }
+    facilityLyr = cluster;
+    leaflet.addLayer(facilityLyr);
+    $('map-status').textContent = `${geo.features?.length||0} facilities loaded.`;
+  } catch(e) { $('map-status').textContent = 'Error: '+e.message; }
+}
+$('btn-load-facilities').addEventListener('click', () => loadFacilities());
+$('btn-apply-filter').addEventListener('click', () => loadFacilities());
+$('map-state-filter').addEventListener('keydown', e => { if (e.key === 'Enter') loadFacilities(); });
+
+$('btn-clear-map').addEventListener('click', () => {
+  if(desertLyr)   { leaflet?.removeLayer(desertLyr); desertLyr=null; }
+  if(facilityLyr) { leaflet?.removeLayer(facilityLyr); facilityLyr=null; }
+  $('map-status').textContent = 'Map cleared.';
 });
 
-document.getElementById("btn-clear-map").addEventListener("click", () => {
-  if (desertLayer)   { leafletMap?.removeLayer(desertLayer); desertLayer = null; }
-  if (facilityLayer) { leafletMap?.removeLayer(facilityLayer); facilityLayer = null; }
-  document.getElementById("map-status").textContent = "Map cleared.";
-});
-
-// ── Dataset Stats ──────────────────────────────────────────────────────────
-let statsLoaded = false;
+/* ── dataset stats ── */
+let statsInit = false;
 async function loadStats() {
-  statsLoaded = true;
+  statsInit = true;
   try {
-    const s = await fetchJson("/stats");
-    document.getElementById("st-total").textContent = s.total_facilities?.toLocaleString() || "—";
-    document.getElementById("st-states").textContent = s.states_covered || "—";
-    document.getElementById("st-cities").textContent = s.cities_covered?.toLocaleString() || "—";
-    document.getElementById("st-geo").textContent = s.facilities_with_coords?.toLocaleString() + " (" + (s.geo_coverage_pct||0) + "%)";
-    document.getElementById("st-comp").textContent = ((s.overall_completeness||0)*100).toFixed(1) + "%";
-    document.getElementById("st-note").textContent = s.data_quality_note || "";
+    const s = await api('/stats');
+    $('st-total').textContent  = (s.total_facilities||0).toLocaleString();
+    $('st-states').textContent = s.states_covered||'—';
+    $('st-cities').textContent = (s.cities_covered||0).toLocaleString();
+    $('st-geo').textContent    = (s.facilities_with_coords||0).toLocaleString() + ' (' + (s.geo_coverage_pct||0) + '%)';
+    $('st-note').textContent   = s.data_quality_note||'';
 
-    // Completeness distribution
-    const dist = s.completeness_distribution || {};
-    const total = s.total_facilities || 1;
-    document.getElementById("comp-dist").innerHTML = [
-      {label:"High (≥70%)", count:dist.high||0, color:"#22c55e"},
-      {label:"Medium (40–70%)", count:dist.medium||0, color:"#f59e0b"},
-      {label:"Low (<40%)", count:dist.low||0, color:"#ef4444"},
-    ].map(d => {
-      const pct = Math.round((d.count/total)*100);
-      return `<div>
-        <div style="display:flex;justify-content:space-between;font-size:.79rem;color:var(--muted)">
-          <span>${d.label}</span><span>${d.count.toLocaleString()} (${pct}%)</span>
+    const dist=s.completeness_distribution||{}, n=s.total_facilities||1;
+    $('comp-dist').innerHTML = [
+      {l:'High (≥70%)', v:dist.high||0, c:'#3fb950'},
+      {l:'Medium (40–70%)', v:dist.medium||0, c:'#d29922'},
+      {l:'Low (<40%)', v:dist.low||0, c:'#f85149'},
+    ].map(d=>{
+      const p=Math.round(d.v/n*100);
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:4px">
+          <span>${d.l}</span><span style="font-family:var(--mono)">${d.v.toLocaleString()} (${p}%)</span>
         </div>
-        <div class="fill-bar"><div class="fill-bar-inner" style="width:${pct}%;background:${d.color}"></div></div>
+        <div class="fill-bar"><div class="fill-inner" style="width:${p}%;background:${d.c}"></div></div>
       </div>`;
-    }).join("");
+    }).join('');
 
-    // Field fill rates
-    const fills = s.field_fill_rates || {};
-    document.getElementById("fill-rates").innerHTML = Object.entries(fills).map(([k,v]) => {
-      const pct = Math.round(v*100);
-      return `<div>
-        <div style="display:flex;justify-content:space-between;font-size:.79rem;color:var(--muted)">
-          <span>${k}</span><span>${pct}%</span>
+    const fills = s.field_fill_rates||{};
+    $('fill-rates').innerHTML = Object.entries(fills).map(([k,v])=>{
+      const p=Math.round(v*100);
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:4px">
+          <span>${esc(k)}</span><span style="font-family:var(--mono)">${p}%</span>
         </div>
-        <div class="fill-bar"><div class="fill-bar-inner" style="width:${pct}%"></div></div>
+        <div class="fill-bar"><div class="fill-inner" style="width:${p}%"></div></div>
       </div>`;
-    }).join("");
-  } catch(e) {
-    document.getElementById("st-total").textContent = "Error";
-  }
+    }).join('');
+  } catch(e) { $('st-total').textContent = 'Error'; }
 }
 </script>
 </body>

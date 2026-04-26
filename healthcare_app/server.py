@@ -284,6 +284,7 @@ def create_app() -> Flask:
             return jsonify(
                 {
                     "response": result["messages"][-1].content,
+                    "intent": result.get("intent"),
                     "trust_score": result.get("trust_score"),
                     "trust_flags": result.get("trust_flags"),
                     "trust_breakdown": result.get("trust_breakdown"),
