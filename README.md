@@ -68,6 +68,12 @@ Backend auto-selection (unless `LLM_PROVIDER` is explicitly set):
 pip install -r requirements.txt
 ```
 
+For local-only heavyweight features (FAISS local index, HuggingFace local fallback, MLflow):
+
+```bash
+pip install -r requirements.local.txt
+```
+
 ### 2) Configure environment
 
 Copy `.env.example` to `.env` in project root.

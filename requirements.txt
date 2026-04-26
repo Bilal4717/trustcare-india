@@ -13,12 +13,6 @@ langchain-community>=0.3
 langgraph>=0.2
 pydantic>=2.0
 
-# ── Vector store (local FAISS fallback) ───────────────────────────────────────
-faiss-cpu>=1.8
-
-# ── Observability ─────────────────────────────────────────────────────────────
-mlflow>=3.0.0
-
 # ── Web search enrichment ─────────────────────────────────────────────────────
 tavily-python>=0.5.0
 
@@ -28,10 +22,6 @@ langchain-google-genai>=2.0.0
 
 # OpenAI — optional cloud alternative
 langchain-openai>=0.2
-
-# Local HuggingFace fallback (no cloud API key required)
-sentence-transformers>=3.0.0
-torch>=2.1.0
 
 # ── Databricks integration (install for Databricks-native stack) ──────────────
 # Uncomment these when running against a Databricks workspace:

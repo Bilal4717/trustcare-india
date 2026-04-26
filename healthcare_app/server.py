@@ -206,9 +206,16 @@ def create_app() -> Flask:
             embed_label = f"openai:{EMBED_MODEL}"
             _backend = "openai"
         else:
-            from langchain_community.embeddings import HuggingFaceEmbeddings
-            embedding = HuggingFaceEmbeddings(model_name=LOCAL_EMBED_MODEL)
-            _backend = "local"
+            try:
+                from langchain_community.embeddings import HuggingFaceEmbeddings
+
+                embedding = HuggingFaceEmbeddings(model_name=LOCAL_EMBED_MODEL)
+                _backend = "local"
+            except Exception as exc:
+                raise RuntimeError(
+                    "Local embedding backend unavailable. Set GEMINI_API_KEY or OPENAI_API_KEY "
+                    "for cloud mode, or install local extras with: pip install -r requirements.local.txt"
+                ) from exc
 
     # ── Vector store: Mosaic AI VS → FAISS ───────────────────────────────────
     if is_databricks_configured():

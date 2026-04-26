@@ -1,0 +1,15 @@
+# Local/full install profile (includes heavyweight optional dependencies).
+# Use this for local development:
+#   pip install -r requirements.local.txt
+
+-r requirements.txt
+
+# ── Vector store (local FAISS fallback) ───────────────────────────────────────
+faiss-cpu>=1.8
+
+# ── Observability ─────────────────────────────────────────────────────────────
+mlflow>=3.0.0
+
+# ── Local HuggingFace fallback (no cloud API key required) ───────────────────
+sentence-transformers>=3.0.0
+torch>=2.1.0
